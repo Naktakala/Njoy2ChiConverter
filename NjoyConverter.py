@@ -70,7 +70,10 @@ def ProcessTransferMatrix(nL_i, lines):
             A table containing the group wise transfer coefficients. '''    
     matrix = []
     # Skip 4 lines
-    nL = nL_i + 5
+    add_skip = 0
+    if lines[nL_i+1].find("particle emission")>=0:
+        add_skip = 1
+    nL = nL_i + 5 + add_skip
     words = lines[nL].split()
     num_words = len(words)
 
@@ -306,6 +309,8 @@ def BuildCombinedData(raw_njoy_data):
         sig_t[G_n + G_g-g-1] += v
 
     # ================================= Combine sig_s
+    # This cross-section still needs some work but
+    # is ultimately not used by Chi-Tech
     nelastic_data = raw_njoy_data["cross_sections"]["(n,elastic)"]
     ninelstc_data = raw_njoy_data["cross_sections"]["(n,inelastic)"]
     n_to_n_data   = raw_njoy_data["cross_sections"]["(n,2n)"]
@@ -316,35 +321,25 @@ def BuildCombinedData(raw_njoy_data):
 
     sig_s = np.zeros(G)
 
-    for entry in nelastic_data:
-        g = entry[0]
-        v = entry[1]
-        sig_s[G_n-g-1] += v
+    def AddSigSNeutron(data_vals):
+        for entry in data_vals:
+            g = entry[0]
+            v = entry[1]
+            sig_s[G_n-g-1] += v
 
-    for entry in ninelstc_data:
-        g = entry[0]
-        v = entry[1]
-        sig_s[G_n-g-1] += v   
+    def AddSigSGamma(data_vals):
+        for entry in coherent_data:
+            g = entry[0]
+            v = entry[1]
+            sig_s[G_n + G_g-g-1] += v 
 
-    for entry in n_to_n_data:
-        g = entry[0]
-        v = entry[1]
-        sig_s[G_n-g-1] += v   
+    AddSigSNeutron(nelastic_data)  
+    AddSigSNeutron(ninelstc_data) 
+    AddSigSNeutron(n_to_n_data)       
 
-    for entry in coherent_data:
-        g = entry[0]
-        v = entry[1]
-        sig_s[G_n + G_g-g-1] += v 
-
-    for entry in incohrnt_data:
-        g = entry[0]
-        v = entry[1]
-        sig_s[G_n + G_g-g-1] += v 
-
-    for entry in pp_xs_data:
-        g = entry[0]
-        v = entry[1]
-        sig_s[G_n + G_g-g-1] += v     
+    AddSigSGamma(coherent_data)
+    AddSigSGamma(incohrnt_data)
+    AddSigSGamma(pp_xs_data)   
 
     # ================================= Combine multiplication data
     sig_f = np.zeros(G)
@@ -354,109 +349,80 @@ def BuildCombinedData(raw_njoy_data):
     chi = np.zeros(G)
 
     # ================================= Combine transfer matrices
-    nelastic_data = raw_njoy_data["transfer_matrices"]["(n,elastic)"]
-    ninelstc_data = raw_njoy_data["transfer_matrices"]["(n,inel)"]
+    nranges_to_nranges = []
+    nranges_to_nranges.append(raw_njoy_data["transfer_matrices"]["(n,elastic)"])
+    nranges_to_nranges.append(raw_njoy_data["transfer_matrices"]["(n,2n)"])
 
-    n_2n_mat_data = raw_njoy_data["transfer_matrices"]["(n,2n)"]
+    #Adding all the (n,nxx) data, inelastic data
+    for nn in range(1,24+1):
+        rx_name = "(n,n{:02d})".format(nn)
+        if rx_name in raw_njoy_data["transfer_matrices"]:
+            mat = raw_njoy_data["transfer_matrices"][rx_name]
+            nranges_to_nranges.append(mat)
 
-    ngamma_data = raw_njoy_data["transfer_matrices"]["(n,g)"]
+    nranges_to_granges = []
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,g)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,inel)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,np)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,nd)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,p)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,d)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,t)"])
+    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,a)"])
 
-    coherent_data = raw_njoy_data["transfer_matrices"]["(g,coherent)"]
-    incohrnt_data = raw_njoy_data["transfer_matrices"]["(g,incoherent)"]
-    pp_trnfr_data = raw_njoy_data["transfer_matrices"]["pair_production"]
+    granges_to_granges = []
+    granges_to_granges.append(raw_njoy_data["transfer_matrices"]["(g,coherent)"])
+    granges_to_granges.append(raw_njoy_data["transfer_matrices"]["(g,incoherent)"])
+    granges_to_granges.append(raw_njoy_data["transfer_matrices"]["pair_production"])
 
-    # Determine the max number of moments
-    num_moms = len(nelastic_data[0])-2
-    num_moms = max(num_moms, len(ninelstc_data[0])-2)
-    num_moms = max(num_moms, len(n_2n_mat_data[0])-2)
-    num_moms = max(num_moms, len(ngamma_data[0]  )-2)
-    num_moms = max(num_moms, len(coherent_data[0])-2)
-    num_moms = max(num_moms, len(incohrnt_data[0])-2)
-    num_moms = max(num_moms, len(pp_trnfr_data[0])-2)
-    max_num_moms = num_moms
+    max_num_moms = 0
+    for range_data in nranges_to_nranges:
+        max_num_moms = max(max_num_moms,len(range_data[0])-2)
+    for range_data in nranges_to_granges:
+        max_num_moms = max(max_num_moms,len(range_data[0])-2)
+    for range_data in granges_to_granges:
+        max_num_moms = max(max_num_moms,len(range_data[0])-2)
 
     transfer_mats = []
     for m in range(0,max_num_moms):
         transfer_mats.append(np.zeros((G,G)))
 
     transfer_mats_nonzeros = []
-    
-    # Determine number of moments
-    num_moms = len(nelastic_data[0])-2
-    # (n,elastic)
-    for entry in nelastic_data:
-        gprime = G_n - entry[0] - 1
-        g      = G_n - entry[1] - 1
 
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
+    #=======================================
+    # Lambda-ish to add neutron data
+    def AddTransferNeutron(data_vals,offset=0):
+        # (n,elastic)
+        for entry in data_vals:
+            gprime = G_n - entry[0] - 1
+            g      = G_n - entry[1] - 1 + offset
 
-    # Determine number of moments
-    num_moms = len(ninelstc_data[0])-2
-    # (n,inelastic)
-    for entry in ninelstc_data:
-        gprime = G_n - entry[0] - 1
-        g      = G_n + G_g - entry[1] - 1
+            # Determine number of moments
+            num_moms = len(entry)-2
+            for m in range(0,num_moms):
+                v = entry[m+2]
+                transfer_mats[m][gprime,g] += v
 
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
+    #=======================================
+    # Lambda-ish to add gamma data
+    def AddTransferGamma(data_vals):
+        # (g,coherent)
+        for entry in data_vals:
+            gprime = G_n + G_g - entry[0] - 1
+            g      = G_n + G_g - entry[1] - 1
 
-    # Determine number of moments
-    num_moms = len(n_2n_mat_data[0])-2
-    # (n,2n)
-    for entry in n_2n_mat_data:
-        gprime = G_n - entry[0] - 1
-        g      = G_n + G_g - entry[1] - 1
+            # Determine number of moments
+            num_moms = len(entry)-2
+            for m in range(0,num_moms):
+                v = entry[m+2]
+                transfer_mats[m][gprime,g] += v
 
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
-
-    # Determine number of moments
-    num_moms = len(ngamma_data[0])-2
-    # (n,gamma)
-    for entry in ngamma_data:
-        gprime = G_n - entry[0] - 1
-        g      = G_n + G_g - entry[1] - 1
-
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
-
-    # Determine number of moments
-    num_moms = len(coherent_data[0])-2
-    # (g,coherent)
-    for entry in coherent_data:
-        gprime = G_n + G_g - entry[0] - 1
-        g      = G_n + G_g - entry[1] - 1
-
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
-    
-    # Determine number of moments
-    num_moms = len(incohrnt_data[0])-2
-    # (g,incoherent)
-    for entry in incohrnt_data:
-        gprime = G_n + G_g - entry[0] - 1
-        g      = G_n + G_g - entry[1] - 1
-
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
-
-    # Determine number of moments
-    num_moms = len(pp_trnfr_data[0])-2
-    # (pair_production)
-    for entry in pp_trnfr_data:
-        gprime = G_n + G_g - entry[0] - 1
-        g      = G_n + G_g - entry[1] - 1
-
-        for m in range(0,num_moms):
-            v = entry[m+2]
-            transfer_mats[m][gprime,g] += v
+    for range_data in nranges_to_nranges:
+        AddTransferNeutron(range_data)
+    for range_data in nranges_to_granges:
+        AddTransferNeutron(range_data,offset=G_g)
+    for range_data in granges_to_granges:
+        AddTransferGamma(range_data)
 
     # Determine sparsity of the transfer matrices
     for m in range(0,max_num_moms):
@@ -480,6 +446,8 @@ def BuildCombinedData(raw_njoy_data):
 
     #================================== Build return data
     return_data = {}
+    return_data["neutron_gs"] = neutn_gs
+    return_data["gamma_gs"] = gamma_gs
     return_data["sigma_t"] = sig_t
     return_data["sigma_s"] = sig_s
     return_data["sigma_f"] = sig_f
@@ -562,6 +530,88 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
 
     cf.close()
 
+#====================================================================
+def InfiniteMediumSpectrum(data):
+    neutron_gs = data["neutron_gs"]
+    gamma_gs = data["gamma_gs"]
+    sig_t = data["sigma_t"]
+    transfer_mats = data["transfer_matrices"]
+    transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
+
+    #======================================= Convert data to numpy data
+    # for infinite medium
+    G         = np.size(sig_t)
+    G_neutron = len(neutron_gs)
+    G_gamma   = len(gamma_gs)
+
+    v_sig_t = np.array(sig_t)
+    M_sig_gp_to_g = np.zeros([G,G])
+
+    for gprime in range(0,G):
+        for g in transfer_mats_nonzeros[0][gprime]:
+            M_sig_gp_to_g[gprime,g] = transfer_mats[0][gprime,g]
+
+    S = M_sig_gp_to_g.transpose()
+    T = np.diag(v_sig_t)
+
+    A = T - S
+    A_inv = np.linalg.inv(A)
+
+    v_src = np.zeros(G)
+    v_src[0] = 1.0
+
+    v_psi = np.matmul(A_inv,v_src)
+
+    #======================================= Build data/energy
+    neutron_group_bndries = []
+    neutron_bndry_edge_values = []
+    gamma_group_bndries = []
+    gamma_bndry_edge_values = []
+    for g in range(0,len(neutron_gs)):
+        gprime = G_neutron - g -1
+
+        lo_bound = neutron_gs[g][1]/1e6
+        hi_bound = neutron_gs[g][2]/1e6
+
+        bin_width = hi_bound-lo_bound
+
+        neutron_group_bndries.append(lo_bound)
+        neutron_group_bndries.append(hi_bound)
+
+        neutron_bndry_edge_values.append(v_psi[gprime]/bin_width)
+        neutron_bndry_edge_values.append(v_psi[gprime]/bin_width)
+
+    for g in range(0,len(gamma_gs)):
+        gprime = (G_gamma - g -1) + G_neutron
+
+        lo_bound = gamma_gs[g][1]/1e6
+        hi_bound = gamma_gs[g][2]/1e6
+
+        bin_width = hi_bound-lo_bound
+
+        gamma_group_bndries.append(lo_bound)
+        gamma_group_bndries.append(hi_bound)
+
+        gamma_bndry_edge_values.append(v_psi[gprime]/bin_width)
+        gamma_bndry_edge_values.append(v_psi[gprime]/bin_width)
+
+    last_nval = neutron_bndry_edge_values[len(neutron_bndry_edge_values)-1]
+    last_gval = gamma_bndry_edge_values[len(gamma_bndry_edge_values)-1]
+
+    for i in range(0,len(neutron_bndry_edge_values)):
+        neutron_bndry_edge_values[i] /= last_nval
+
+    for i in range(0,len(gamma_bndry_edge_values)):
+        gamma_bndry_edge_values[i] /= last_gval
+
+    plt.plot(neutron_group_bndries, neutron_bndry_edge_values)
+    plt.yscale("log")
+    plt.show()
+
+    plt.plot(gamma_group_bndries, gamma_bndry_edge_values)
+    plt.yscale("log")
+    plt.show()
+
 
 #####################################################################
 # Stand-alone usage
@@ -572,6 +622,8 @@ if __name__ == "__main__":
 
     data = BuildCombinedData(raw_njoy_data)
     WriteChiTechFile(data)
+
+    InfiniteMediumSpectrum(data)
 
     # print(raw_njoy_data["transfer_matrices"]["(n,elastic)"][0])
     # print(raw_njoy_data["transfer_matrices"]["coherent"][11])
