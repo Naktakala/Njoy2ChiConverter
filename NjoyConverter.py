@@ -365,15 +365,24 @@ def BuildCombinedData(raw_njoy_data):
     incohrnt_data = raw_njoy_data["transfer_matrices"]["(g,incoherent)"]
     pp_trnfr_data = raw_njoy_data["transfer_matrices"]["pair_production"]
 
-    #Determine number of moments
+    # Determine the max number of moments
     num_moms = len(nelastic_data[0])-2
+    num_moms = max(num_moms, len(ninelstc_data[0])-2)
+    num_moms = max(num_moms, len(n_2n_mat_data[0])-2)
+    num_moms = max(num_moms, len(ngamma_data[0]  )-2)
+    num_moms = max(num_moms, len(coherent_data[0])-2)
+    num_moms = max(num_moms, len(incohrnt_data[0])-2)
+    num_moms = max(num_moms, len(pp_trnfr_data[0])-2)
+    max_num_moms = num_moms
 
     transfer_mats = []
-    for m in range(0,num_moms):
+    for m in range(0,max_num_moms):
         transfer_mats.append(np.zeros((G,G)))
 
     transfer_mats_nonzeros = []
     
+    # Determine number of moments
+    num_moms = len(nelastic_data[0])-2
     # (n,elastic)
     for entry in nelastic_data:
         gprime = G_n - entry[0] - 1
@@ -383,6 +392,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
 
+    # Determine number of moments
+    num_moms = len(ninelstc_data[0])-2
     # (n,inelastic)
     for entry in ninelstc_data:
         gprime = G_n - entry[0] - 1
@@ -392,6 +403,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
 
+    # Determine number of moments
+    num_moms = len(n_2n_mat_data[0])-2
     # (n,2n)
     for entry in n_2n_mat_data:
         gprime = G_n - entry[0] - 1
@@ -401,6 +414,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
 
+    # Determine number of moments
+    num_moms = len(ngamma_data[0])-2
     # (n,gamma)
     for entry in ngamma_data:
         gprime = G_n - entry[0] - 1
@@ -410,6 +425,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
 
+    # Determine number of moments
+    num_moms = len(coherent_data[0])-2
     # (g,coherent)
     for entry in coherent_data:
         gprime = G_n + G_g - entry[0] - 1
@@ -419,6 +436,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
     
+    # Determine number of moments
+    num_moms = len(incohrnt_data[0])-2
     # (g,incoherent)
     for entry in incohrnt_data:
         gprime = G_n + G_g - entry[0] - 1
@@ -428,6 +447,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
 
+    # Determine number of moments
+    num_moms = len(pp_trnfr_data[0])-2
     # (pair_production)
     for entry in pp_trnfr_data:
         gprime = G_n + G_g - entry[0] - 1
@@ -437,7 +458,8 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[m+2]
             transfer_mats[m][gprime,g] += v
 
-    for m in range(0,num_moms):
+    # Determine sparsity of the transfer matrices
+    for m in range(0,max_num_moms):
         mat_non_zeros = []
         for gprime in range(0,G):
             non_zeros = []
@@ -544,6 +566,8 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
 #####################################################################
 # Stand-alone usage
 if __name__ == "__main__":
+    plt.close('all')
+    
     raw_njoy_data = ReadNJOYfile()
 
     data = BuildCombinedData(raw_njoy_data)
