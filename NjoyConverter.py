@@ -71,7 +71,8 @@ def ProcessTransferMatrix(nL_i, lines):
     matrix = []
     # Skip 4 lines
     add_skip = 0
-    if lines[nL_i+1].find("particle emission")>=0:
+    if lines[nL_i+1].find("particle emission")>=0 or \
+       lines[nL_i+2].find("spectrum constant below")>=0:
         add_skip = 1
     nL = nL_i + 5 + add_skip
     words = lines[nL].split()
@@ -93,15 +94,15 @@ def ProcessTransferMatrix(nL_i, lines):
             words[i] = first_part+secnd_part
 
         # Develop table entry
-        entry = []
-        entry.append(int(words[0])-1)
-        entry.append(int(words[1])-1)
-        for i in range(2,num_words):
-            entry.append(float(words[i]))
+        if words[0] != "normalization":
+          entry = []
+          entry.append(int(words[0])-1)
+          entry.append(int(words[1])-1)
+          for i in range(2,num_words):
+              entry.append(float(words[i]))
+          matrix.append(entry)
 
-        matrix.append(entry)
         nL += 1
-
         words = lines[nL].split()
         num_words = len(words)
 
@@ -311,13 +312,17 @@ def BuildCombinedData(raw_njoy_data):
     # ================================= Combine sig_s
     # This cross-section still needs some work but
     # is ultimately not used by Chi-Tech
-    nelastic_data = raw_njoy_data["cross_sections"]["(n,elastic)"]
-    ninelstc_data = raw_njoy_data["cross_sections"]["(n,inelastic)"]
-    n_to_n_data   = raw_njoy_data["cross_sections"]["(n,2n)"]
 
-    coherent_data = raw_njoy_data["cross_sections"]["(g,coherent)"]
-    incohrnt_data = raw_njoy_data["cross_sections"]["(g,incoherent)"]
-    pp_xs_data    = raw_njoy_data["cross_sections"]["(g,pair_production)"]
+    neutron_rxn_keys = [ \
+      "(n,elastic)", \
+      "(n,inelastic)", \
+      "(n,2n)", \
+      ]
+    gamma_rxn_keys = [ \
+      "(g,coherent)", \
+      "(g,incoherent)", \
+      "(g,pair_production)", \
+      ]
 
     sig_s = np.zeros(G)
 
@@ -328,18 +333,18 @@ def BuildCombinedData(raw_njoy_data):
             sig_s[G_n-g-1] += v
 
     def AddSigSGamma(data_vals):
-        for entry in coherent_data:
+        for entry in data_vals:
             g = entry[0]
             v = entry[1]
             sig_s[G_n + G_g-g-1] += v 
 
-    AddSigSNeutron(nelastic_data)  
-    AddSigSNeutron(ninelstc_data) 
-    AddSigSNeutron(n_to_n_data)       
+    for rxn in neutron_rxn_keys:
+        if rxn in raw_njoy_data["cross_sections"]:
+            AddSigSNeutron(raw_njoy_data["cross_sections"][rxn])
 
-    AddSigSGamma(coherent_data)
-    AddSigSGamma(incohrnt_data)
-    AddSigSGamma(pp_xs_data)   
+    for rxn in gamma_rxn_keys:
+        if rxn in raw_njoy_data["cross_sections"]:
+            AddSigSGamma(raw_njoy_data["cross_sections"][rxn])
 
     # ================================= Combine multiplication data
     sig_f = np.zeros(G)
@@ -349,9 +354,32 @@ def BuildCombinedData(raw_njoy_data):
     chi = np.zeros(G)
 
     # ================================= Combine transfer matrices
+
+    n_to_n_transfer_keys = [ \
+      "(n,elastic)", \
+      "(n,inelastic)", \
+      "(n,2n)", \
+      ]
+    n_to_g_transfer_keys = [ \
+      "(n,g)", \
+      "(n,inel)", \
+      "(n,np)", \
+      "(n,nd)", \
+      "(n,p)", \
+      "(n,d)", \
+      "(n,t)", \
+      "(n,a)", \
+      ]
+    g_to_g_transfer_keys = [ \
+      "(g,coherent)", \
+      "(g,incoherent)", \
+      "(g,pair_production)", \
+      ]
+
     nranges_to_nranges = []
-    nranges_to_nranges.append(raw_njoy_data["transfer_matrices"]["(n,elastic)"])
-    nranges_to_nranges.append(raw_njoy_data["transfer_matrices"]["(n,2n)"])
+    for rxn in n_to_n_transfer_keys:
+        if rxn in raw_njoy_data["transfer_matrices"]:
+            nranges_to_nranges.append(raw_njoy_data["transfer_matrices"][rxn])
 
     #Adding all the (n,nxx) data, inelastic data
     for nn in range(1,24+1):
@@ -361,27 +389,25 @@ def BuildCombinedData(raw_njoy_data):
             nranges_to_nranges.append(mat)
 
     nranges_to_granges = []
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,g)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,inel)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,np)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,nd)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,p)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,d)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,t)"])
-    nranges_to_granges.append(raw_njoy_data["transfer_matrices"]["(n,a)"])
+    for rxn in n_to_g_transfer_keys:
+        if rxn in raw_njoy_data["transfer_matrices"]:
+            nranges_to_granges.append(raw_njoy_data["transfer_matrices"][rxn])
 
     granges_to_granges = []
-    granges_to_granges.append(raw_njoy_data["transfer_matrices"]["(g,coherent)"])
-    granges_to_granges.append(raw_njoy_data["transfer_matrices"]["(g,incoherent)"])
-    granges_to_granges.append(raw_njoy_data["transfer_matrices"]["pair_production"])
+    for rxn in g_to_g_transfer_keys:
+        if rxn in raw_njoy_data["transfer_matrices"]:
+            granges_to_granges.append(raw_njoy_data["transfer_matrices"][rxn])
 
     max_num_moms = 0
     for range_data in nranges_to_nranges:
-        max_num_moms = max(max_num_moms,len(range_data[0])-2)
+        if range_data:
+            max_num_moms = max(max_num_moms,len(range_data[0])-2)
     for range_data in nranges_to_granges:
-        max_num_moms = max(max_num_moms,len(range_data[0])-2)
+        if range_data:
+            max_num_moms = max(max_num_moms,len(range_data[0])-2)
     for range_data in granges_to_granges:
-        max_num_moms = max(max_num_moms,len(range_data[0])-2)
+        if range_data:
+            max_num_moms = max(max_num_moms,len(range_data[0])-2)
 
     transfer_mats = []
     for m in range(0,max_num_moms):
