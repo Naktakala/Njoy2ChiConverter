@@ -1,4 +1,6 @@
 ''' Converts neutron gamma njoy output to chitech-format '''
+import sys
+import os
 import numpy as np 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -285,29 +287,35 @@ def ReadNJOYfile(njoy_filename="output"):
 #====================================================================
 def BuildCombinedData(raw_njoy_data):
     ''' Combines enjoy raw data into a dictionary of vectors and matrices '''
+    # ================================= Get dictionaries
+    group_structures = raw_njoy_data["group_structures"]
+    cross_sections = raw_njoy_data["cross_sections"]
+    transfer_matrices = raw_njoy_data["transfer_matrices"]
+
     # ================================= Determine # of groups
-    neutn_gs = raw_njoy_data["group_structures"]["neutron"]
-    gamma_gs = raw_njoy_data["group_structures"]["gamma"]
+    neutn_gs = group_structures["neutron"]
+    gamma_gs = group_structures["gamma"] if "gamma" in group_structures else []
 
     G_n = len(neutn_gs)
     G_g = len(gamma_gs)
     G   = G_n + G_g 
-
+    
     # ================================= Combine sig_t
-    sig_t_ndata = raw_njoy_data["cross_sections"]["(n,total)"]
-    sig_t_gdata = raw_njoy_data["cross_sections"]["(g,total)"]
-
     sig_t = np.zeros(G)
+    
+    if ("(n,total)" in cross_sections):
+        sig_t_ndata = cross_sections["(n,total)"]
+        for entry in sig_t_ndata:
+            g = entry[0]
+            v = entry[1]
+            sig_t[G_n-g-1] += v
 
-    for entry in sig_t_ndata:
-        g = entry[0]
-        v = entry[1]
-        sig_t[G_n-g-1] += v
-
-    for entry in sig_t_gdata:
-        g = entry[0]
-        v = entry[1]
-        sig_t[G_n + G_g-g-1] += v
+    if ("(g,total)" in cross_sections):
+        sig_t_gdata = cross_sections["(g,total)"]
+        for entry in sig_t_gdata:
+            g = entry[0]
+            v = entry[1]
+            sig_t[G_n + G_g-g-1] += v
 
     # ================================= Combine sig_s
     # This cross-section still needs some work but
@@ -339,12 +347,12 @@ def BuildCombinedData(raw_njoy_data):
             sig_s[G_n + G_g-g-1] += v 
 
     for rxn in neutron_rxn_keys:
-        if rxn in raw_njoy_data["cross_sections"]:
-            AddSigSNeutron(raw_njoy_data["cross_sections"][rxn])
+        if rxn in cross_sections:
+            AddSigSNeutron(cross_sections[rxn])
 
     for rxn in gamma_rxn_keys:
-        if rxn in raw_njoy_data["cross_sections"]:
-            AddSigSGamma(raw_njoy_data["cross_sections"][rxn])
+        if rxn in cross_sections:
+            AddSigSGamma(cross_sections[rxn])
 
     # ================================= Combine multiplication data
     sig_f = np.zeros(G)
@@ -378,25 +386,25 @@ def BuildCombinedData(raw_njoy_data):
 
     nranges_to_nranges = []
     for rxn in n_to_n_transfer_keys:
-        if rxn in raw_njoy_data["transfer_matrices"]:
-            nranges_to_nranges.append(raw_njoy_data["transfer_matrices"][rxn])
+        if rxn in transfer_matrices:
+            nranges_to_nranges.append(transfer_matrices[rxn])
 
     #Adding all the (n,nxx) data, inelastic data
     for nn in range(1,24+1):
         rx_name = "(n,n{:02d})".format(nn)
-        if rx_name in raw_njoy_data["transfer_matrices"]:
-            mat = raw_njoy_data["transfer_matrices"][rx_name]
+        if rx_name in transfer_matrices:
+            mat = transfer_matrices[rx_name]
             nranges_to_nranges.append(mat)
 
     nranges_to_granges = []
     for rxn in n_to_g_transfer_keys:
-        if rxn in raw_njoy_data["transfer_matrices"]:
-            nranges_to_granges.append(raw_njoy_data["transfer_matrices"][rxn])
+        if rxn in transfer_matrices:
+            nranges_to_granges.append(transfer_matrices[rxn])
 
     granges_to_granges = []
     for rxn in g_to_g_transfer_keys:
-        if rxn in raw_njoy_data["transfer_matrices"]:
-            granges_to_granges.append(raw_njoy_data["transfer_matrices"][rxn])
+        if rxn in transfer_matrices:
+            granges_to_granges.append(transfer_matrices[rxn])
 
     max_num_moms = 0
     for range_data in nranges_to_nranges:
@@ -465,10 +473,12 @@ def BuildCombinedData(raw_njoy_data):
     plt.figure(figsize=(6,6))
     Atest = transfer_mats[0]
     plt.imshow(np.log10(Atest)+10, cmap=cm.Greys)
+    plt.xticks(np.arange(G), [str(g) for g in range(G)])
+    plt.yticks(np.arange(G), [str(g) for g in range(G)])
     plt.xlabel('Destination energy group')
     plt.ylabel('Source energy group')
     # plt.savefig("SERPENTTransferMatrix.png")
-    plt.show()
+    # plt.show()
 
     #================================== Build return data
     return_data = {}
@@ -622,21 +632,27 @@ def InfiniteMediumSpectrum(data):
         gamma_bndry_edge_values.append(v_psi[gprime]/bin_width)
 
     last_nval = neutron_bndry_edge_values[len(neutron_bndry_edge_values)-1]
-    last_gval = gamma_bndry_edge_values[len(gamma_bndry_edge_values)-1]
+    if (gamma_bndry_edge_values != []):
+        last_gval = gamma_bndry_edge_values[len(gamma_bndry_edge_values)-1]
 
     for i in range(0,len(neutron_bndry_edge_values)):
         neutron_bndry_edge_values[i] /= last_nval
 
-    for i in range(0,len(gamma_bndry_edge_values)):
-        gamma_bndry_edge_values[i] /= last_gval
+    if (gamma_bndry_edge_values != []):
+        for i in range(0,len(gamma_bndry_edge_values)):
+            gamma_bndry_edge_values[i] /= last_gval
 
+    plt.figure(figsize=(6,6))
     plt.plot(neutron_group_bndries, neutron_bndry_edge_values)
     plt.yscale("log")
+    plt.xlabel("Energy (MeV)")
+    plt.ylabel("$\phi(E)$")
     plt.show()
 
-    plt.plot(gamma_group_bndries, gamma_bndry_edge_values)
-    plt.yscale("log")
-    plt.show()
+    if (gamma_bndry_edge_values != []):
+        plt.plot(gamma_group_bndries, gamma_bndry_edge_values)
+        plt.yscale("log")
+        plt.show()
 
 
 #####################################################################
@@ -644,7 +660,10 @@ def InfiniteMediumSpectrum(data):
 if __name__ == "__main__":
     plt.close('all')
     
-    raw_njoy_data = ReadNJOYfile()
+    njoy_file = 'output'
+    if len(sys.argv) == 2:
+        njoy_file = sys.argv[1]
+    raw_njoy_data = ReadNJOYfile(njoy_file)
 
     data = BuildCombinedData(raw_njoy_data)
     WriteChiTechFile(data)
