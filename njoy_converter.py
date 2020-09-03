@@ -62,6 +62,39 @@ def ProcessCrossSection(nL_i, lines,header_size=5,line_incr=1):
     return xs
 
 #====================================================================
+def ProcessChi(nL_i, lines, header_size=4, line_incr=1):
+    ''' Reads 1D fission spectrum from the lines. 
+        params:
+            nL_i    File line number before data starts.
+            lines   An array of file lines.
+        
+        return:
+            A table containing the group wise xs. '''
+    xs=[]
+    # Skip header
+    nL = nL_i + header_size
+    words = lines[nL].split()
+    num_words = len(words)
+
+    g = 0
+    while (num_words>=2):
+        if not words[0].isdigit():
+            nL += 2
+            words = lines[nL].split()
+            num_words = len(words)
+
+        for number_word in words[1:]:
+            number_word = number_word.replace("+","E+")
+            number_word = number_word.replace("-","E-")
+            xs.append([g, float(number_word)])
+            g += 1
+            
+        nL += line_incr
+        words = lines[nL].split()
+        num_words = len(words)
+    return xs
+
+#====================================================================
 def ProcessTransferMatrix(nL_i, lines):    
     ''' Reads transfer matrices from the lines. 
         params:
@@ -244,6 +277,22 @@ def ReadNJOYfile(njoy_filename="output"):
                 cross_sections["(n,2n)"] = \
                     ProcessCrossSection(nL,file_lines) 
 
+            if (words[2] == "3" and words[4] == "mt259"):
+                cross_sections["inv_velocity"] = \
+                    ProcessCrossSection(nL,file_lines)
+            
+            if (words[2] == "3" and words[5] == "18"):
+                cross_sections["(n,fission)"] = \
+                    ProcessCrossSection(nL,file_lines)
+
+            if (words[2] == "3" and words[4] == "mt452"):
+                cross_sections["total_nubar"] = \
+                    ProcessCrossSection(nL,file_lines)
+
+            if (words[2] == "5" and words[5] == "18"):
+                cross_sections["prompt_chi"] = \
+                    ProcessChi(nL,file_lines,4)
+
             if (words[num_words-1] == "matrix"):
                 transfer_matrices[words[num_words-3]] = \
                     ProcessTransferMatrix(nL,file_lines)
@@ -317,6 +366,17 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[1]
             sig_t[G_n + G_g-g-1] += v
 
+    # ================================= Inverse velocity term
+    inv_v = np.zeros(G)
+
+    if ("inv_velocity" in cross_sections):
+        inv_v_ndata = cross_sections["inv_velocity"]
+        for entry in inv_v_ndata:
+            g = entry[0]
+            v = entry[1]
+            inv_v[G_n-g-1] += v
+
+
     # ================================= Combine sig_s
     # This cross-section still needs some work but
     # is ultimately not used by Chi-Tech
@@ -356,10 +416,28 @@ def BuildCombinedData(raw_njoy_data):
 
     # ================================= Combine multiplication data
     sig_f = np.zeros(G)
+    if ("(n,fission)" in cross_sections):
+        sig_f_data = cross_sections["(n,fission)"]
+        for entry in sig_f_data:
+            g = entry[0]
+            v = entry[1]
+            sig_f[G_n-g-1] += v
 
     nu = np.zeros(G)
+    if ("total_nubar" in cross_sections):
+        total_nubar_data = cross_sections["total_nubar"]
+        for entry in total_nubar_data:
+            g = entry[0]
+            v = entry[1]
+            nu[G_n-g-1] += v
 
     chi = np.zeros(G)
+    if ("prompt_chi" in cross_sections):
+        prompt_chi_data = cross_sections["prompt_chi"]
+        for entry in prompt_chi_data:
+            g = entry[0]
+            v = entry[1]
+            chi[G_n-g-1] += v
 
     # ================================= Combine transfer matrices
 
@@ -489,6 +567,7 @@ def BuildCombinedData(raw_njoy_data):
     return_data["sigma_f"] = sig_f
     return_data["nu"] = nu
     return_data["chi"] = chi
+    return_data["inv_velocity"] = inv_v
     return_data["transfer_matrices"] = transfer_mats
     return_data["transfer_matrices_sparsity"] = transfer_mats_nonzeros
 
@@ -503,6 +582,7 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
     sig_f = data["sigma_f"]
     nu = data["nu"]
     chi = data["chi"]
+    ddt_coeff = data["inv_velocity"] 
     transfer_mats = data["transfer_matrices"]
     transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
 
@@ -548,20 +628,29 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
         cf.write("\n")
     cf.write("CHI_END"+"\n")
 
+
+    cf.write("DDT_COEFF_BEGIN"+"\n")
+    for g in range(0,G):
+        cf.write("{:<4d}".format(g)+ " ")
+        cf.write("{:<g}".format(ddt_coeff[g]/100))
+        cf.write("\n")
+    cf.write("DDT_COEFF_END"+"\n")
+
     cf.write("TRANSFER_MOMENTS_BEGIN"+"\n")
     for m in range(0,M):
-        cf.write("TRANSFER_MOMENT_BEGIN "+str(m)+"\n")
+        cf.write("# l = " + str(m) + "\n")
         for gprime in range(0,G):
-            cf.write("GPRIME_TO_G " + str(gprime))
-            num_limits = G 
-            cf.write(" " + str(num_limits)+"\n")
+            # cf.write("GPRIME_TO_G " + str(gprime))
+            # num_limits = G 
+            # cf.write(" " + str(num_limits)+"\n")
 
             for g in transfer_mats_nonzeros[m][gprime]:
+                cf.write("M_GPRIME_G_VAL"+ " ")
+                cf.write("{:<4d}".format(m)+ " ")
                 cf.write("{:<4d}".format(gprime)+ " ")
                 cf.write("{:<4d}".format(g)+ " ")
-                cf.write("{:<g}".format(transfer_mats[m][gprime,g]))
+                cf.write("{:<g}".format(transfer_mats[m][gprime][g]))
                 cf.write("\n")
-        cf.write("TRANSFER_MOMENT_END"+"\n")
     cf.write("TRANSFER_MOMENTS_END"+"\n")
 
     cf.close()
@@ -647,28 +736,41 @@ def InfiniteMediumSpectrum(data):
     plt.yscale("log")
     plt.xlabel("Energy (MeV)")
     plt.ylabel("$\phi(E)$")
-    plt.show()
+    # plt.show()
 
     if (gamma_bndry_edge_values != []):
         plt.plot(gamma_group_bndries, gamma_bndry_edge_values)
         plt.yscale("log")
-        plt.show()
+        # plt.show()
 
 
 #####################################################################
 # Stand-alone usage
 if __name__ == "__main__":
+    from shutil import copyfile
     plt.close('all')
     
-    njoy_file = 'output'
-    if len(sys.argv) == 2:
-        njoy_file = sys.argv[1]
-    raw_njoy_data = ReadNJOYfile(njoy_file)
+    njoy_dir = "../njoy_xs"
+    chi_dir = "/Users/zachhardy/codes/Chi_Tech/chi-pulse/cross-sections"
 
-    data = BuildCombinedData(raw_njoy_data)
-    WriteChiTechFile(data)
+    assert os.path.isdir(njoy_dir)
+    assert os.path.isdir(chi_dir)
 
-    InfiniteMediumSpectrum(data)
+    for njoy_file in os.listdir(njoy_dir):
+        if njoy_file.endswith(".txt"):
+            njoy_path = os.path.join(njoy_dir, njoy_file)
+
+            # Parse NJOY cross section files
+            with open(njoy_path, 'r') as xs_file:
+                raw_njoy_data = ReadNJOYfile(njoy_path)
+
+            # Reformat raw NJOY data
+            data = BuildCombinedData(raw_njoy_data)
+
+            # Write to ChiTech cross section file
+            chi_file = njoy_file.replace(".txt",".csx")
+            chi_path = os.path.join(chi_dir, chi_file)
+            WriteChiTechFile(data, chi_path)
 
     # print(raw_njoy_data["transfer_matrices"]["(n,elastic)"][0])
     # print(raw_njoy_data["transfer_matrices"]["coherent"][11])
