@@ -62,8 +62,8 @@ def ProcessCrossSection(nL_i, lines,header_size=5,line_incr=1):
     return xs
 
 #====================================================================
-def ProcessChi(nL_i, lines, header_size=4, line_incr=1):
-    ''' Reads 1D fission spectrum from the lines. 
+def ProcessPromptChi(nL_i, lines, header_size=4, line_incr=1):
+    ''' Reads 1D prompt fission spectrum from the lines. 
         params:
             nL_i    File line number before data starts.
             lines   An array of file lines.
@@ -93,6 +93,56 @@ def ProcessChi(nL_i, lines, header_size=4, line_incr=1):
         words = lines[nL].split()
         num_words = len(words)
     return xs
+
+#====================================================================
+def ProcessDecayConstants(nL_i, lines):
+    ''' Reads delayed neutron decay constants from delayed chi.
+        params:
+            nL_i    File line number before data starts.
+            lines   An array of file lines.
+
+        return:
+            A table containing delayed neutron group decay constants.
+    '''
+    decay_const = []
+    nL = nL_i + 2
+    nL += 1 if lines[nL].split()[0]=="normalized" else 3
+    words = lines[nL].split()
+    for j, number_word in enumerate(words[1:]):
+        number_word = number_word.replace("+","E+")
+        number_word = number_word.replace("-","E-")
+        decay_const.append([j, float(number_word)])
+    return decay_const
+
+#====================================================================
+def ProcessDelayedChi(nL_i, lines):
+    ''' Reads the delayed neutron spectra from the lines.
+        params:
+            nL_i    File line number before data starts.
+            lines   An array of file lines.
+        
+        return:
+            A table containing the group wise delayed 
+            neutron precursor spectrum coefficients. '''
+    matrix = []
+    nL = nL_i + 2
+    nL += 3 if lines[nL].split()[0]=="normalized" else 5
+    words = lines[nL].split()
+    num_words = len(words)
+    while (num_words>=2):
+        g = int(words[0])-1
+        entry = [g]
+        for j, number_word in enumerate(words[1:]):
+            number_word = number_word.replace("+","E+")
+            number_word = number_word.replace("-","E-")
+            entry.append(float(number_word))
+        matrix.append(entry)
+
+        nL += 1
+        words = lines[nL].split()
+        num_words = len(words)
+
+    return matrix
 
 #====================================================================
 def ProcessTransferMatrix(nL_i, lines):    
@@ -140,7 +190,6 @@ def ProcessTransferMatrix(nL_i, lines):
         nL += 1
         words = lines[nL].split()
         num_words = len(words)
-
     return matrix  
 
 #====================================================================
@@ -248,18 +297,15 @@ def ReadNJOYfile(njoy_filename="output"):
 
         if (line.find("neutron group structure") != -1 and 
                 words[3] != "option"):
-            PrintLine(nL,line)
             group_structures["neutron"] = ProcessGroupStructure(nL,file_lines)
 
         if (line.find("gamma group structure") != -1):
             if not flag_gamma_structure_processed:
-                PrintLine(nL,line)
                 group_structures["gamma"] = ProcessGroupStructure(nL,file_lines)
                 flag_gamma_structure_processed = True 
 
         if (line.find("for mf") != -1 and
                 line.find("mt") != -1 ):
-            PrintLine(nL,line)  
 
             if (words[2] == "3" and words[5] == "1" ):
                 cross_sections["(n,total)"] = \
@@ -289,9 +335,23 @@ def ReadNJOYfile(njoy_filename="output"):
                 cross_sections["total_nubar"] = \
                     ProcessCrossSection(nL,file_lines)
 
+            if (words[2] == "3" and words[4] == "mt456"):
+                cross_sections["prompt_nubar"] = \
+                    ProcessCrossSection(nL,file_lines)
+
+            if (words[2] == "3" and words[4] == "mt455"): 
+                cross_sections["delayed_nubar"] = \
+                    ProcessCrossSection(nL,file_lines)
+
             if (words[2] == "5" and words[5] == "18"):
                 cross_sections["prompt_chi"] = \
-                    ProcessChi(nL,file_lines,4)
+                    ProcessPromptChi(nL,file_lines,4)
+
+            if (words[2] == "5" and words[4] == "mt455"):
+                cross_sections["decay_constants"] = \
+                    ProcessDecayConstants(nL,file_lines)
+                cross_sections["delayed_chi"] = \
+                    ProcessDelayedChi(nL,file_lines)
 
             if (words[num_words-1] == "matrix"):
                 transfer_matrices[words[num_words-3]] = \
@@ -348,7 +408,7 @@ def BuildCombinedData(raw_njoy_data):
     G_n = len(neutn_gs)
     G_g = len(gamma_gs)
     G   = G_n + G_g 
-    
+        
     # ================================= Combine sig_t
     sig_t = np.zeros(G)
     
@@ -414,7 +474,7 @@ def BuildCombinedData(raw_njoy_data):
         if rxn in cross_sections:
             AddSigSGamma(cross_sections[rxn])
 
-    # ================================= Combine multiplication data
+    # ================================= Fission data
     sig_f = np.zeros(G)
     if ("(n,fission)" in cross_sections):
         sig_f_data = cross_sections["(n,fission)"]
@@ -423,21 +483,60 @@ def BuildCombinedData(raw_njoy_data):
             v = entry[1]
             sig_f[G_n-g-1] += v
 
-    nu = np.zeros(G)
+    nu_total = np.zeros(G)
     if ("total_nubar" in cross_sections):
         total_nubar_data = cross_sections["total_nubar"]
         for entry in total_nubar_data:
             g = entry[0]
             v = entry[1]
-            nu[G_n-g-1] += v
+            nu_total[G_n-g-1] += v
 
-    chi = np.zeros(G)
+    nu_prompt = np.zeros(G)
+    if ("prompt_nubar" in cross_sections):
+        prompt_nubar_data = cross_sections["prompt_nubar"]
+        for entry in total_nubar_data:
+            g = entry[0]
+            v = entry[1]
+            nu_prompt[G_n-g-1] += v
+
+    chi_prompt = np.zeros(G)
     if ("prompt_chi" in cross_sections):
         prompt_chi_data = cross_sections["prompt_chi"]
         for entry in prompt_chi_data:
             g = entry[0]
             v = entry[1]
-            chi[G_n-g-1] += v
+            chi_prompt[G_n-g-1] += v
+
+    # ================================= Delayed neutron data
+    decay_const=[]
+    if ("decay_constants" in cross_sections):
+        for entry in cross_sections["decay_constants"]:
+            decay_const.append(entry[1])
+        decay_const = np.asarray(decay_const)
+    J = len(decay_const) # number of precursor groups
+
+
+    nu_delayed = np.zeros(G)
+    if ("delayed_nubar" in cross_sections):
+        delayed_nubar_data = cross_sections["delayed_nubar"]
+        for entry in delayed_nubar_data:
+            g = entry[0]
+            v = entry[1]
+            nu_delayed[G_n-g-1] += v
+
+    chi_delayed = np.zeros((G,J))
+    if ("delayed_chi" in cross_sections):
+        delayed_chi_data = cross_sections["delayed_chi"]
+        for entry in delayed_chi_data:
+            g = entry[0]
+            v = entry[1:]
+            chi_delayed[G_n-g-1] += v
+
+    gamma = np.zeros(J)
+    if (np.sum(nu_delayed)>0 and np.sum(chi_delayed)>0):
+        nu_bar_delayed = np.mean(nu_delayed)
+        delayed_frac = np.sum(chi_delayed,axis=0)
+        gamma = nu_bar_delayed*delayed_frac
 
     # ================================= Combine transfer matrices
 
@@ -565,8 +664,13 @@ def BuildCombinedData(raw_njoy_data):
     return_data["sigma_t"] = sig_t
     return_data["sigma_s"] = sig_s
     return_data["sigma_f"] = sig_f
-    return_data["nu"] = nu
-    return_data["chi"] = chi
+    return_data["nu_total"] = nu_total
+    return_data["nu_prompt"] = nu_prompt
+    return_data["nu_delayed"] = nu_delayed
+    return_data["chi_prompt"] = chi_prompt
+    return_data["chi_delayed"] = chi_delayed
+    return_data["decay_constants"] = decay_const
+    return_data["gamma"] = gamma
     return_data["inv_velocity"] = inv_v
     return_data["transfer_matrices"] = transfer_mats
     return_data["transfer_matrices_sparsity"] = transfer_mats_nonzeros
@@ -580,18 +684,25 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
     sig_t = data["sigma_t"]
     sig_s = data["sigma_s"]
     sig_f = data["sigma_f"]
-    nu = data["nu"]
-    chi = data["chi"]
+    nu_total = data["nu_total"]
+    nu_prompt = data["nu_prompt"]
+    nu_delayed = data["nu_delayed"]
+    chi_prompt = data["chi_prompt"]
+    chi_delayed = data["chi_delayed"]
+    decay_const = data["decay_constants"]
+    gamma = data["gamma"]
     ddt_coeff = data["inv_velocity"] 
     transfer_mats = data["transfer_matrices"]
     transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
 
     G = np.size(sig_t)
     M = len(transfer_mats)
+    J = len(decay_const)
 
     cf.write(comment+"\n")
     cf.write("NUM_GROUPS "+str(G)+"\n")
     cf.write("NUM_MOMENTS "+str(M)+"\n")
+    cf.write("NUM_PRECURSORS "+str(J)+"\n")
 
     cf.write("SIGMA_T_BEGIN"+"\n")
     for g in range(0,G):
@@ -614,20 +725,42 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
         cf.write("\n")
     cf.write("SIGMA_F_END"+"\n")
 
-    cf.write("NU_BEGIN"+"\n")
+    cf.write("NU_TOTAL_BEGIN"+"\n")
     for g in range(0,G):
         cf.write("{:<4d}".format(g)+ " ")
-        cf.write("{:<g}".format(nu[g]))
+        cf.write("{:<g}".format(nu_total[g]))
         cf.write("\n")
-    cf.write("NU_END"+"\n")
+    cf.write("NU_TOTAL_END"+"\n")
 
-    cf.write("CHI_BEGIN"+"\n")
+    cf.write("NU_PROMPT_BEGIN"+"\n")
     for g in range(0,G):
         cf.write("{:<4d}".format(g)+ " ")
-        cf.write("{:<g}".format(chi[g]))
+        cf.write("{:<g}".format(nu_prompt[g]))
         cf.write("\n")
-    cf.write("CHI_END"+"\n")
+    cf.write("NU_PROMPT_END"+"\n")
 
+    cf.write("NU_DELAYED_BEGIN"+"\n")
+    for g in range(0,G):
+        cf.write("{:<4d}".format(g)+ " ")
+        cf.write("{:<g}".format(nu_delayed[g]))
+        cf.write("\n")
+    cf.write("NU_DELAYED_END"+"\n")
+
+    cf.write("CHI_PROMPT_BEGIN"+"\n")
+    for g in range(0,G):
+        cf.write("{:<4d}".format(g)+ " ")
+        cf.write("{:<g}".format(chi_prompt[g]))
+        cf.write("\n")
+    cf.write("CHI_PROMPT_END"+"\n")
+
+    cf.write("CHI_DELAYED_BEGIN"+"\n")
+    for g in range(0,G):
+        for j in range(0,J):
+            cf.write("{:<4d}".format(g)+ " ")
+            cf.write("{:<4d}".format(j)+ " ")
+            cf.write("{:<g}".format(chi_delayed[g][j]))
+            cf.write("\n")
+    cf.write("CHI_DELAYED_END"+"\n")
 
     cf.write("DDT_COEFF_BEGIN"+"\n")
     for g in range(0,G):
@@ -635,6 +768,20 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
         cf.write("{:<g}".format(ddt_coeff[g]/100))
         cf.write("\n")
     cf.write("DDT_COEFF_END"+"\n")
+
+    cf.write("DECAY_CONSTANTS_BEGIN"+"\n")
+    for j in range(0,J):
+        cf.write("{:<4d}".format(j)+ " ")
+        cf.write("{:<g}".format(decay_const[j]))
+        cf.write("\n")
+    cf.write("DECAY_CONSTANTS_END"+"\n")
+
+    cf.write("GAMMA_BEGIN"+"\n")
+    for j in range(0,J):
+        cf.write("{:<4d}".format(j)+ " ")
+        cf.write("{:<g}".format(gamma[j]))
+        cf.write("\n")
+    cf.write("GAMMA_END"+"\n")
 
     cf.write("TRANSFER_MOMENTS_BEGIN"+"\n")
     for m in range(0,M):
@@ -748,7 +895,6 @@ def InfiniteMediumSpectrum(data):
 # Stand-alone usage
 if __name__ == "__main__":
     from shutil import copyfile
-    plt.close('all')
     
     njoy_dir = "../njoy_xs"
     chi_dir = "/Users/zachhardy/codes/Chi_Tech/chi-pulse/cross-sections"
@@ -757,12 +903,15 @@ if __name__ == "__main__":
     assert os.path.isdir(chi_dir)
 
     for njoy_file in os.listdir(njoy_dir):
+        plt.close('all')
         if njoy_file.endswith(".txt"):
             njoy_path = os.path.join(njoy_dir, njoy_file)
 
             # Parse NJOY cross section files
+            print("\nPARSING FILE: " + njoy_path)
             with open(njoy_path, 'r') as xs_file:
                 raw_njoy_data = ReadNJOYfile(njoy_path)
+           
 
             # Reformat raw NJOY data
             data = BuildCombinedData(raw_njoy_data)
