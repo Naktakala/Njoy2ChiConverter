@@ -531,6 +531,7 @@ def BuildCombinedData(raw_njoy_data):
             g = entry[0]
             v = entry[1:]
             chi_delayed[G_n-g-1] += v
+        chi_delayed /= np.sum(chi_delayed,axis=0)
 
     gamma = np.zeros(J)
     if (np.sum(nu_delayed)>0 and np.sum(chi_delayed)>0):
@@ -725,12 +726,12 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
         cf.write("\n")
     cf.write("SIGMA_F_END"+"\n")
 
-    cf.write("NU_TOTAL_BEGIN"+"\n")
+    cf.write("NU_BEGIN"+"\n")
     for g in range(0,G):
         cf.write("{:<4d}".format(g)+ " ")
         cf.write("{:<g}".format(nu_total[g]))
         cf.write("\n")
-    cf.write("NU_TOTAL_END"+"\n")
+    cf.write("NU_END"+"\n")
 
     cf.write("NU_PROMPT_BEGIN"+"\n")
     for g in range(0,G):
@@ -739,13 +740,6 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
         cf.write("\n")
     cf.write("NU_PROMPT_END"+"\n")
 
-    cf.write("NU_DELAYED_BEGIN"+"\n")
-    for g in range(0,G):
-        cf.write("{:<4d}".format(g)+ " ")
-        cf.write("{:<g}".format(nu_delayed[g]))
-        cf.write("\n")
-    cf.write("NU_DELAYED_END"+"\n")
-
     cf.write("CHI_PROMPT_BEGIN"+"\n")
     for g in range(0,G):
         cf.write("{:<4d}".format(g)+ " ")
@@ -753,35 +747,12 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
         cf.write("\n")
     cf.write("CHI_PROMPT_END"+"\n")
 
-    cf.write("CHI_DELAYED_BEGIN"+"\n")
-    for g in range(0,G):
-        for j in range(0,J):
-            cf.write("{:<4d}".format(g)+ " ")
-            cf.write("{:<4d}".format(j)+ " ")
-            cf.write("{:<g}".format(chi_delayed[g][j]))
-            cf.write("\n")
-    cf.write("CHI_DELAYED_END"+"\n")
-
     cf.write("DDT_COEFF_BEGIN"+"\n")
     for g in range(0,G):
         cf.write("{:<4d}".format(g)+ " ")
         cf.write("{:<g}".format(ddt_coeff[g]/100))
         cf.write("\n")
     cf.write("DDT_COEFF_END"+"\n")
-
-    cf.write("DECAY_CONSTANTS_BEGIN"+"\n")
-    for j in range(0,J):
-        cf.write("{:<4d}".format(j)+ " ")
-        cf.write("{:<g}".format(decay_const[j]))
-        cf.write("\n")
-    cf.write("DECAY_CONSTANTS_END"+"\n")
-
-    cf.write("GAMMA_BEGIN"+"\n")
-    for j in range(0,J):
-        cf.write("{:<4d}".format(j)+ " ")
-        cf.write("{:<g}".format(gamma[j]))
-        cf.write("\n")
-    cf.write("GAMMA_END"+"\n")
 
     cf.write("TRANSFER_MOMENTS_BEGIN"+"\n")
     for m in range(0,M):
@@ -799,6 +770,30 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
                 cf.write("{:<g}".format(transfer_mats[m][gprime][g]))
                 cf.write("\n")
     cf.write("TRANSFER_MOMENTS_END"+"\n")
+
+    cf.write("PRECURSOR_LAMBDA_BEGIN"+"\n")
+    for j in range(0,J):
+        cf.write("{:<4d}".format(j)+ " ")
+        cf.write("{:<g}".format(decay_const[j]))
+        cf.write("\n")
+    cf.write("PRECURSOR_LAMBDA_END"+"\n")
+
+    cf.write("PRECURSOR_GAMMA_BEGIN"+"\n")
+    for j in range(0,J):
+        cf.write("{:<4d}".format(j)+ " ")
+        cf.write("{:<g}".format(gamma[j]))
+        cf.write("\n")
+    cf.write("PRECURSOR_GAMMA_END"+"\n")
+
+    cf.write("CHI_DELAYED_BEGIN"+"\n")
+    for g in range(0,G):
+        for j in range(0,J):
+            cf.write("G_PRECURSORJ_VAL"+ " ")
+            cf.write("{:<4d}".format(g)+ " ")
+            cf.write("{:<4d}".format(j)+ " ")
+            cf.write("{:<g}".format(chi_delayed[g][j]))
+            cf.write("\n")
+    cf.write("CHI_DELAYED_END"+"\n")
 
     cf.close()
 
