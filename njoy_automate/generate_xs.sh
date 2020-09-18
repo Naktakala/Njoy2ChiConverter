@@ -1,29 +1,32 @@
 #! /usr/bin/env bash
 
 function default_gs_mapping(){
-	if [[ $1 == "lanl30" ]]
+	if [[ $1 == *"lanl"* ]] || [[ $1 == *"xmas"* ]]
 	then
-		sed -i -e 's/gs/3/g' $2
-	elif [[ $1 == "lanl70" ]]
-	then
-		sed -i -e 's/gs/11/g' $2
-	elif [[ $1 == "lanl80" ]]
-	then
-		sed -i -e 's/gs/13/g' $2
-	elif [[ $1 == "lanl187" ]]
-	then
-		sed -i -e 's/gs/10/g' $2
-	elif [[ $1 == "lanl618" ]]
-	then
-		sed -i -e 's/gs/34/g' $2
-	elif [[ $1 == "xmas172" ]]
-	then
-		sed -i -e 's/gs/22/g' $2
-	elif [[ $1 == "xmasnea" ]]
-	then
-		sed -i -e 's/gs/18/g' $2
-	else
-		echo "Unrecognized default group structure."
+		if [[ $1 == "lanl30" ]]
+		then
+			sed -i -e 's/gs/3/g' $2
+		elif [[ $1 == "lanl70" ]]
+		then
+			sed -i -e 's/gs/11/g' $2
+		elif [[ $1 == "lanl80" ]]
+		then
+			sed -i -e 's/gs/13/g' $2
+		elif [[ $1 == "lanl187" ]]
+		then
+			sed -i -e 's/gs/10/g' $2
+		elif [[ $1 == "lanl618" ]]
+		then
+			sed -i -e 's/gs/34/g' $2
+		elif [[ $1 == "xmas172" ]]
+		then
+			sed -i -e 's/gs/22/g' $2
+		elif [[ $1 == "xmasnea" ]]
+		then
+			sed -i -e 's/gs/18/g' $2
+		else
+			echo "Unrecognized default group structure."
+		fi
 	fi
 }
 
@@ -73,8 +76,8 @@ temperatures=( "296" "400" "500" "600" "800" )
 isotopes=( "C-nat" )
 # isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
 
-# grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
-grp_structs=( "lanl187" "lanl618" "xmas172" )
+grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
+# grp_structs=( "lanl187" "lanl618" "xmas172" )
 
 nummoms=( "7" )
 

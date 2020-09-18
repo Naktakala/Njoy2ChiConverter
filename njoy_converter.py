@@ -22,16 +22,22 @@ def ProcessGroupStructure(nL_i,lines):
       returns the group_structure '''
   group_struct = []
   nL = nL_i + 1
+  words = lines[nL].split()
+  while (True):
+    if (len(words) == 0):
+      nL += 1; words = lines[nL].split()
+    if (words[0] == "1"): break
+    nL += 1; words = lines[nL].split()
+
   while (True):
     words = lines[nL].split()
     if not words: 
       break 
 
     group_struct.append( [int(words[0])-1,
-                              float(words[1]),
-                              float(words[3])])
+                          float(words[1]),
+                          float(words[3])])
     nL += 1
-  
   return group_struct
 
 #====================================================================
@@ -293,8 +299,10 @@ def ReadNJOYfile(njoy_filename="output"):
     words = file_lines[nL].split()
     num_words = len(words)
 
-    if (line.find("neutron group structure") != -1 and 
-        words[3] != "option"):
+    # if (line.find("neutron group structure") != -1 and words[3] != "option"):
+    #   group_structures["neutron"] = ProcessGroupStructure(nL,file_lines)
+
+    if (line.find("sigma zeroes") != -1):
       group_structures["neutron"] = ProcessGroupStructure(nL,file_lines)
 
     if (line.find("gamma group structure") != -1):
@@ -392,7 +400,7 @@ def ReadNJOYfile(njoy_filename="output"):
   return njoy_raw_data
 
 #====================================================================
-def BuildCombinedData(raw_njoy_data):
+def BuildCombinedData(raw_njoy_data, plot=False):
   ''' Combines enjoy raw data into a dictionary of vectors and matrices '''
   # ================================= Get dictionaries
   group_structures = raw_njoy_data["group_structures"]
@@ -503,8 +511,10 @@ def BuildCombinedData(raw_njoy_data):
 
   # ================================= Combine transfer matrices
 
-  n_to_n_elastic_keys = ["(n,elastic)", "mt221"]
-  n_to_n_transfer_keys = ["(n,inelastic)", "(n,2n)"]
+  n_to_n_elastic_keys = ["(n,elastic)"]
+  n_to_n_elastic_sab_keys = ["mt230"]
+  n_to_n_inelastic_sab_keys = ["mt222", "mt229"]
+  n_to_n_transfer_keys = ["(n,2n)"]
   n_to_g_transfer_keys = [ \
     "(n,g)", \
     "(n,inel)", \
@@ -520,19 +530,29 @@ def BuildCombinedData(raw_njoy_data):
     "(g,incoherent)", \
     "(g,pair_production)", \
     ]
-
-  elastic_ranges = []
+    
+  nranges_to_nranges_elastic = []
   for rxn in n_to_n_elastic_keys:
     if rxn in transfer_matrices:
-      elastic_ranges.append(transfer_matrices[rxn])
+      nranges_to_nranges_elastic.append(transfer_matrices[rxn])
+
+  nranges_to_nranges_elastic_sab = []
+  for rxn in n_to_n_elastic_sab_keys:
+    if rxn in transfer_matrices:
+      nranges_to_nranges_elastic_sab.append(transfer_matrices[rxn])
+
+  nranges_to_nranges_inelastic_sab = []
+  for rxn in n_to_n_inelastic_sab_keys:
+    if rxn in transfer_matrices:
+      nranges_to_nranges_inelastic_sab.append(transfer_matrices[rxn])
 
   # Adding all the (n,nxx) data, inelastic data
-  nranges_to_nranges = []
+  nranges_to_nranges_inelastic = []
   for nn in range(1,24+1):
     rx_name = "(n,n{:02d})".format(nn)
     if rx_name in transfer_matrices:
       mat = transfer_matrices[rx_name]
-      nranges_to_nranges.append(mat)
+      nranges_to_nranges_inelastic.append(mat)
 
   nranges_to_granges = []
   for rxn in n_to_g_transfer_keys:
@@ -545,18 +565,14 @@ def BuildCombinedData(raw_njoy_data):
       granges_to_granges.append(transfer_matrices[rxn])
 
   max_num_moms = 0
-  for range_data in elastic_ranges:
-    if range_data:
-      max_num_moms = max(max_num_moms,len(range_data[0])-2)
-  for range_data in nranges_to_nranges:
-    if range_data:
-      max_num_moms = max(max_num_moms,len(range_data[0])-2)
-  for range_data in nranges_to_granges:
-    if range_data:
-      max_num_moms = max(max_num_moms,len(range_data[0])-2)
-  for range_data in granges_to_granges:
-    if range_data:
-      max_num_moms = max(max_num_moms,len(range_data[0])-2)
+  all_ranges = [nranges_to_nranges_elastic, nranges_to_nranges_inelastic,
+                nranges_to_nranges_elastic_sab, nranges_to_nranges_inelastic_sab,
+                nranges_to_granges, granges_to_granges]
+                
+  for ranges in all_ranges:
+    for range_data in ranges:
+      if range_data:
+        max_num_moms = max(max_num_moms,len(range_data[0])-2)
 
   transfer_mats = []
   for m in range(0,max_num_moms):
@@ -566,7 +582,7 @@ def BuildCombinedData(raw_njoy_data):
 
   #=======================================
   # Lambda-ish to add neutron data
-  def AddTransferNeutron(data_vals,offset=0,additive=False):
+  def AddTransferNeutron(data_vals,offset=0,additive=True):
     for entry in data_vals:
       num_moms = len(entry)-2
       gprime = G_n - entry[0] - 1
@@ -591,14 +607,75 @@ def BuildCombinedData(raw_njoy_data):
         v = entry[m+2]
         transfer_mats[m][gprime,g] += v
 
-  for range_data in elastic_ranges:
+  # Construct individual transfer matrices
+  # Regular elastic scatter
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_elastic:
     AddTransferNeutron(range_data,additive=False)
-  for range_data in nranges_to_nranges:
-    AddTransferNeutron(range_data,additive=True)
+  sig_s_el = transfer_mats[0] @ np.ones(G)
+
+  # Regular inelastic scatter
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_inelastic:
+    AddTransferNeutron(range_data,additive=False)
+  sig_s_inel = transfer_mats[0] @ np.ones(G)
+
+  # S(alpha,beta) elastic scatter
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_elastic_sab:
+    AddTransferNeutron(range_data,additive=False)
+  sig_s_el_sab = transfer_mats[0] @ np.ones(G)
+
+  # S(alpha,beta) elastic scatter
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_inelastic_sab:
+    AddTransferNeutron(range_data,additive=False)
+  sig_s_inel_sab = transfer_mats[0] @ np.ones(G)
+
+  # Compute uncorrected transfer matrix
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_elastic:
+    AddTransferNeutron(range_data)
+  for range_data in nranges_to_nranges_inelastic:
+    AddTransferNeutron(range_data)
   for range_data in nranges_to_granges:
     AddTransferNeutron(range_data,offset=G_g)
   for range_data in granges_to_granges:
     AddTransferGamma(range_data)
+
+  # Compute sigma_a with no thermal corrections
+  sig_t_uncorr = sig_t
+  sig_s_uncorr = transfer_mats[0] @ np.ones(G)
+  sig_a = sig_t_uncorr - sig_s_uncorr
+
+  # Transfer matrix with corrections
+  # Note that the elastic S(a,b) is set, not additive.
+  # this means that if there is an elastic S(a,b) cross
+  # section for the same transfer as the standard elastic
+  # cross section, the S(a,b) is solely used. The standard
+  # and inelastic S(a,b) are additive. Gamma related stuff
+  # remains additive.
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_elastic:
+    AddTransferNeutron(range_data)
+  for range_data in nranges_to_nranges_elastic_sab:
+    AddTransferNeutron(range_data,additive=False)
+  for range_data in nranges_to_nranges_inelastic:
+    AddTransferNeutron(range_data)
+  for range_data in nranges_to_nranges_inelastic_sab:
+    AddTransferNeutron(range_data)
+  for range_data in nranges_to_granges:
+    AddTransferNeutron(range_data,offset=G_g)
+  for range_data in granges_to_granges:
+    AddTransferGamma(range_data)
+
+  # Here, the scattering cross section is recomputed
+  # with the corrections having been made. The toal
+  # cross section is modified in accordance to the 
+  # aborption cross section computed from the uncorrected
+  # values.
+  sig_s = transfer_mats[0] @ np.ones(G)
+  sig_t = sig_s + sig_a
 
   # Determine sparsity of the transfer matrices
   for m in range(0,max_num_moms):
@@ -611,64 +688,35 @@ def BuildCombinedData(raw_njoy_data):
       mat_non_zeros.append(non_zeros)
     transfer_mats_nonzeros.append(mat_non_zeros)
 
-  # ================================= Combine sig_s
-  # This cross-section still needs some work but
-  # is ultimately not used by Chi-Tech
-
-  neutron_rxn_keys = [ \
-    "(n,elastic)", \
-    "(n,inelastic)", \
-    "mt221", \
-    ]
-  gamma_rxn_keys = [ \
-    "(g,coherent)", \
-    "(g,incoherent)", \
-    "(g,pair_production)", \
-    ]
-
-  sig_s = np.zeros(G)
-
-  def AddSigSNeutron(data_vals):
-    for entry in data_vals:
-      g = entry[0]
-      v = entry[1]
-      sig_s[G_n-g-1] = v
-
-  def AddSigSGamma(data_vals):
-    for entry in data_vals:
-      g = entry[0]
-      v = entry[1]
-      sig_s[G_n + G_g-g-1] += v 
-
-  for rxn in neutron_rxn_keys:
-    if rxn in cross_sections:
-      AddSigSNeutron(cross_sections[rxn])
-
-  for rxn in gamma_rxn_keys:
-    if rxn in cross_sections:
-      AddSigSGamma(cross_sections[rxn])
-
   # Plot the matrix
-  Atest = transfer_mats[0]
-  nz = np.nonzero(Atest)
-  Atest[nz] = np.log10(Atest[nz]) + 10.0
-  
-  plt.figure(figsize=(6,6))
-  im = plt.imshow(Atest, cmap=cm.Greys)
-  plt.xticks(np.arange(0,G,10), [str(g) for g in range(0,G,10)])
-  plt.yticks(np.arange(0,G,10), [str(g) for g in range(0,G,10)])
-  plt.xlabel('Destination energy group')
-  plt.ylabel('Source energy group')
-  plt.gca().xaxis.set_ticks_position('top')
-  plt.gca().xaxis.set_label_position('top')
-  # plt.savefig("SERPENTTransferMatrix.png")
+  if plot:
+    Atest = transfer_mats[0]
+    nz = np.nonzero(Atest)
+    Atest[nz] = np.log10(Atest[nz]) + 10.0
+    
+    plt.figure(figsize=(6,6))
+    im = plt.imshow(Atest, cmap=cm.Greys)
+    plt.xticks(np.arange(0,G,10), [str(g) for g in range(0,G,10)])
+    plt.yticks(np.arange(0,G,10), [str(g) for g in range(0,G,10)])
+    plt.xlabel('Destination energy group')
+    plt.ylabel('Source energy group')
+    plt.gca().xaxis.set_ticks_position('top')
+    plt.gca().xaxis.set_label_position('top')
+    # plt.savefig("SERPENTTransferMatrix.png")
 
   #================================== Build return data
   return_data = {}
   return_data["neutron_gs"] = neutn_gs
   return_data["gamma_gs"] = gamma_gs
   return_data["sigma_t"] = sig_t
+  return_data["sigma_t_uncorr"] = sig_t_uncorr
   return_data["sigma_s"] = sig_s
+  return_data["sigma_s_el"] = sig_s_el
+  return_data["sigma_s_inel"] = sig_s_inel
+  return_data["sigma_s_el_sab"] = sig_s_el_sab
+  return_data["sigma_s_inel_sab"] = sig_s_inel_sab
+  return_data["sigma_s_uncorr"] = sig_s_uncorr
+  return_data["sigma_a"] = sig_a
   return_data["sigma_f"] = sig_f
   return_data["nu_total"] = nu_total
   return_data["nu_prompt"] = nu_prompt
@@ -898,7 +946,7 @@ def InfiniteMediumSpectrum(data):
 if __name__ == "__main__":
   from shutil import copyfile
   
-  njoy_dir = "../njoy_xs"
+  njoy_dir = "njoy_xs"
   chi_dir = "/Users/zachhardy/codes/Chi_Tech/chi-pulse/cross-sections"
 
   assert os.path.isdir(njoy_dir)
@@ -910,19 +958,60 @@ if __name__ == "__main__":
       njoy_path = os.path.join(njoy_dir, njoy_file)
 
       # Parse NJOY cross section files
-      if "U235" in njoy_path and "lanl187" in njoy_path:
-        print("\nPARSING FILE: " + njoy_path)
-        with open(njoy_path, 'r') as xs_file:
-          raw_njoy_data = ReadNJOYfile(njoy_path)
-      
+      if "Cnat" in njoy_path and "296" in njoy_path:
+        if any([gs in njoy_path for gs in ["lanl187","lanl618","xmas172"]]):
+          print("\nPARSING FILE: " + njoy_path)
+          with open(njoy_path, 'r') as xs_file:
+            raw_njoy_data = ReadNJOYfile(njoy_path)
+        
 
-        # Reformat raw NJOY data
-        data = BuildCombinedData(raw_njoy_data)
+          # Reformat raw NJOY data
+          data = BuildCombinedData(raw_njoy_data)
 
-        # Write to ChiTech cross section file
-        chi_file = njoy_file.replace(".txt",".csx")
-        chi_path = os.path.join(chi_dir, chi_file)
-        WriteChiTechFile(data, chi_path)
+          if "lanl187" in njoy_path: title = "LANL 187"
+          elif "lanl618" in njoy_path: title = "LANL 618"
+          elif "xmas172" in njoy_path: title = "XMAS 172"
+
+          # Parse energy group structure, compute bin centroids
+          E, gs = [], data["neutron_gs"]
+          for i in range(len(gs)):
+            if gs[i][2] < 1e7:
+              E.append(1e-6*0.5*(gs[i][1]+gs[i][2]))
+          
+          # Get cross sections
+          sigma_t = data["sigma_t"][:len(E)]
+          sigma_t_uncorr = data["sigma_t_uncorr"][:len(E)]
+          sigma_a = data["sigma_a"][:len(E)]
+          sigma_s = data["sigma_s"][:len(E)]
+          sigma_s_uncorr = data["sigma_t_uncorr"][:len(E)]
+          sigma_s_el = data["sigma_s_el"][:len(E)]
+          sigma_s_inel = data["sigma_s_inel"][:len(E)]
+          sigma_s_el_sab = data["sigma_s_el_sab"][:len(E)]
+          sigma_s_inel_sab = data["sigma_s_inel_sab"][:len(E)]
+
+          plt.figure()
+          plt.title(title)
+          plt.semilogx(E[::-1], sigma_s, '-ob', ms=2.5, label="$\sigma_s$")
+          plt.semilogx(E[::-1], sigma_s_uncorr, '-^r', ms=2.5, label="$\sigma_{s,uncorr}$")
+          plt.semilogx(E[::-1], sigma_s_el, '-xg', ms=2.5, label="$\sigma_{s,el}$")
+          plt.semilogx(E[::-1], sigma_s_inel, '-+k', ms=2.5, label="$\sigma_{s,inel}$")
+          plt.semilogx(E[::-1], sigma_s_el_sab, '-mv', ms=2.5, label="$S(\\alpha,\\beta)$ - $\sigma_{s,el}$")
+          plt.semilogx(E[::-1], sigma_s_inel_sab, '-y|', ms=2.5, label="$S(\\alpha,\\beta)$ - $\sigma_{s,inel}$")
+
+          # plt.semilogx(E[::-1], sigma_a, '-^r', label="$\sigma_a$")
+          # plt.semilogx(E[::-1], sigma_s, '-xg', label="$\sigma_s$")
+          plt.xlabel("Energy (Mev)")
+          plt.ylabel("Cross section (b)")
+          plt.legend()
+          plt.grid(True)
+          plt.ylim([0.0,10.0])   
+
+          # Write to ChiTech cross section file
+          chi_file = njoy_file.replace(".txt",".csx")
+
+
+          chi_path = os.path.join(chi_dir, chi_file)
+          WriteChiTechFile(data, chi_path)
 
   plt.show()
   # print(raw_njoy_data["transfer_matrices"]["(n,elastic)"][0])
