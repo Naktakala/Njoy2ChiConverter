@@ -531,13 +531,15 @@ def BuildCombinedData(raw_njoy_data):
             g = entry[0]
             v = entry[1:]
             chi_delayed[G_n-g-1] += v
-        chi_delayed /= np.sum(chi_delayed,axis=0)
 
     gamma = np.zeros(J)
     if (np.sum(nu_delayed)>0 and np.sum(chi_delayed)>0):
         nu_bar_delayed = np.mean(nu_delayed)
         delayed_frac = np.sum(chi_delayed,axis=0)
         gamma = nu_bar_delayed*delayed_frac
+
+    # Normalize chi_delayed spectrum to sum to 1
+    chi_delayed /= np.sum(chi_delayed,axis=0)
 
     # ================================= Combine transfer matrices
 
