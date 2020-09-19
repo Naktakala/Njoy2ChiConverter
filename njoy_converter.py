@@ -531,21 +531,16 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     "(g,pair_production)", \
     ]
     
+  # Adding all the elastic scattering data
   nranges_to_nranges_elastic = []
   for rxn in n_to_n_elastic_keys:
     if rxn in transfer_matrices:
       nranges_to_nranges_elastic.append(transfer_matrices[rxn])
-
+  # Adding all the elastic scattering S(\alpha,\beta) data
   nranges_to_nranges_elastic_sab = []
   for rxn in n_to_n_elastic_sab_keys:
     if rxn in transfer_matrices:
       nranges_to_nranges_elastic_sab.append(transfer_matrices[rxn])
-
-  nranges_to_nranges_inelastic_sab = []
-  for rxn in n_to_n_inelastic_sab_keys:
-    if rxn in transfer_matrices:
-      nranges_to_nranges_inelastic_sab.append(transfer_matrices[rxn])
-
   # Adding all the (n,nxx) data, inelastic data
   nranges_to_nranges_inelastic = []
   for nn in range(1,24+1):
@@ -553,31 +548,36 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     if rx_name in transfer_matrices:
       mat = transfer_matrices[rx_name]
       nranges_to_nranges_inelastic.append(mat)
-
+  # Adding all the inelastic scattering S(\alpha,\beta) data
+  nranges_to_nranges_inelastic_sab = []
+  for rxn in n_to_n_inelastic_sab_keys:
+    if rxn in transfer_matrices:
+      nranges_to_nranges_inelastic_sab.append(transfer_matrices[rxn])
+  # Adding all the neutron to gamma data
   nranges_to_granges = []
   for rxn in n_to_g_transfer_keys:
     if rxn in transfer_matrices:
       nranges_to_granges.append(transfer_matrices[rxn])
-
+  # Adding all the gamma to gamma data
   granges_to_granges = []
   for rxn in g_to_g_transfer_keys:
     if rxn in transfer_matrices:
       granges_to_granges.append(transfer_matrices[rxn])
 
-  max_num_moms = 0
+  # Computing the max number of moments
   all_ranges = [nranges_to_nranges_elastic, nranges_to_nranges_inelastic,
                 nranges_to_nranges_elastic_sab, nranges_to_nranges_inelastic_sab,
                 nranges_to_granges, granges_to_granges]
-                
+  max_num_moms = 0       
   for ranges in all_ranges:
     for range_data in ranges:
       if range_data:
         max_num_moms = max(max_num_moms,len(range_data[0])-2)
 
+  # Initializing the transfer matrices
   transfer_mats = []
   for m in range(0,max_num_moms):
     transfer_mats.append(np.zeros((G,G)))
-
   transfer_mats_nonzeros = []
 
   #=======================================
@@ -607,32 +607,31 @@ def BuildCombinedData(raw_njoy_data, plot=False):
         v = entry[m+2]
         transfer_mats[m][gprime,g] += v
 
-  # Construct individual transfer matrices
-  # Regular elastic scatter
+  # ===== Regular elastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_elastic:
     AddTransferNeutron(range_data,additive=False)
   sig_s_el = transfer_mats[0] @ np.ones(G)
 
-  # Regular inelastic scatter
+  # ===== Regular inelastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_inelastic:
     AddTransferNeutron(range_data,additive=False)
   sig_s_inel = transfer_mats[0] @ np.ones(G)
 
-  # S(alpha,beta) elastic scatter
+  # ===== S(alpha,beta) elastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_elastic_sab:
     AddTransferNeutron(range_data,additive=False)
   sig_s_el_sab = transfer_mats[0] @ np.ones(G)
 
-  # S(alpha,beta) elastic scatter
+  # ===== S(alpha,beta) elastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_inelastic_sab:
     AddTransferNeutron(range_data,additive=False)
   sig_s_inel_sab = transfer_mats[0] @ np.ones(G)
 
-  # Compute uncorrected transfer matrix
+  # ===== Compute uncorrected transfer matrix
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_elastic:
     AddTransferNeutron(range_data)
@@ -643,11 +642,11 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   for range_data in granges_to_granges:
     AddTransferGamma(range_data)
 
-  # Compute sigma_a with no thermal corrections
+  # ===== Compute sigma_a with no thermal corrections
   sig_t_uncorr = sig_t
   sig_s_uncorr = transfer_mats[0] @ np.ones(G)
   sig_a = sig_t_uncorr - sig_s_uncorr
-
+  
   # Transfer matrix with corrections
   # Note that the elastic S(a,b) is set, not additive.
   # this means that if there is an elastic S(a,b) cross
