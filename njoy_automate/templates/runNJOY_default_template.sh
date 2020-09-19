@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 echo 'Getting ENDF input tapes and NJOY executable'
 ln -fs ../endf/neutron/isonospacesub_endf.txt tape21
-ln -fs ../endf/neutron_thermal/isonospacesub_endf.txt tape41                            
+ln -fs ../endf/neutron_thermal/isonospacesub_endf8.txt tape41                            
 echo 'Running NJOY'
 cat>input_isosub <<EOF
 moder
@@ -32,13 +32,13 @@ heatr
 matsub 0/                                                                
 thermr
 0 -90 -26/
-0 matsub 16 1 1 0 0 1 221 1/
+0 matsub 8 1 1 0 0 1 221 2/
 temp/
-0.001 100/
+0.01 100.0/
 s_alpha_beta_input/
 groupr
 -22 -26 0 -30/
-matsub gs 0 5 nummoms 1 1 1 1/                   GROUP STRUCTURE IS 2ND ENTRY, LEGENDRE MOMENTS IS 5TH
+matsub gs 0 2 nummoms 1 1 1 1/                   GROUP STRUCTURE IS 2ND ENTRY, LEGENDRE MOMENTS IS 5TH
 'isosub'/
 temp/
 0.0

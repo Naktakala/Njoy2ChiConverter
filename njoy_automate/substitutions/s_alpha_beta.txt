@@ -1,5 +1,5 @@
 thermr\
 41 -26 -27\/\
-matid matsub 16 1 2 icoh 0 natom mtref 1\/\
+matid matsub 8 1 2 icoh 0 natom mtref 2\/\
 temp\/\
-0.001 100
+0.01 100.0
