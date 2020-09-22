@@ -70,15 +70,9 @@ function s_alpha_beta_sub(){
 	fi
 }
 
-temperatures=( "296" "400" "500" "600" "800" )
-# temperatures=( "296" )
-
-isotopes=( "C-nat" )
-# isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
-
+temperatures=( "293.6" "400" "500" "600" "800" )
+isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
 grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
-# grp_structs=( "lanl187" "lanl618" "xmas172" )
-
 nummoms=( "7" )
 
 echo > generate_xs.log
@@ -90,7 +84,6 @@ do
 		do	
 			for nummom in ${nummoms[*]}
 			do
-
 				printf "\n*** STARTING %s %sg %sm %sK***\n" $isotope $grp_struct $nummom $temp
 
 				# Determine the correct template to use
@@ -101,6 +94,12 @@ do
 					template="${grp_struct}g"
 				fi
 				template_path="templates/runNJOY_${template}_template.sh"
+
+				# Correct temp for S(\alpha,\beta) in graphite
+				if [[ $isotope == "C-nat" ]] && [[ $temp == "293.6" ]]
+				then
+					temp="296"
+				fi
 
 				# Isotope parsing
 				isosub=$isotope
@@ -132,7 +131,7 @@ do
 				rm runNJOY.sh
 
 				# Write to unique filename and move to correct dir
-				if [[ $temp == "293.6" ]]
+				if [[ $temp == "293.6" ]] || [[ $temp == "296" ]]
 				then
 					description="${grp_struct}g${nummom}m_room"
 				else
