@@ -12,4 +12,10 @@ with open(file, "r") as f:
             mat = tokens[ind]
             print(mat)
             break
+        elif "zirconium" in line:
+            tokens = np.array(line.strip().split())
+            ind = np.argwhere(tokens == "zirconium").item() + 1
+            mat = tokens[ind]
+            print(mat)
+            break
 sys.exit(0)

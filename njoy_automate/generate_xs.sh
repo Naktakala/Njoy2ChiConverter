@@ -63,6 +63,17 @@ function s_alpha_beta_sub(){
 		sed -i -e "s/natom/1/g" $2
 		sed -i -e "s/mtref/229/g" $2
 		sed -i -e "s/-22 -26/-22 -27/g" $2
+	elif [[ $1 == "Zr-nat" ]]
+	then
+		sab=$( cat substitutions/s_alpha_beta.txt )
+		rxns=$( cat substitutions/zirc_hydride_rxns.txt )
+		sed -i -e "s/s_alpha_beta_input/${sab}/g" $2
+		sed -i -e "s/s_alpha_beta_rxns/${rxns}/g" $2
+		sed -i -e "s/matid/58/g" $2
+		sed -i -e "s/icoh/1/g" $2
+		sed -i -e "s/natom/1/g" $2
+		sed -i -e "s/mtref/235/g" $2
+		sed -i -e "s/-22 -26/-22 -27/g" $2
 	else
 		sed -i -e "/neutron_thermal/d" $2
 		sed -i -e "/s_alpha_beta_input/d" $2
@@ -71,7 +82,8 @@ function s_alpha_beta_sub(){
 }
 
 temperatures=( "293.6" "400" "500" "600" "800" )
-isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
+# isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
+isotopes=( "Zr-nat" )
 grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
 nummoms=( "7" )
 
@@ -96,7 +108,7 @@ do
 				template_path="templates/runNJOY_${template}_template.sh"
 
 				# Correct temp for S(\alpha,\beta) in graphite
-				if [[ $isotope == "C-nat" ]] && [[ $temp == "293.6" ]]
+				if [[ $isotope == "C-nat" ]] || [[ $isotope == "Zr-nat" ]] && [[ $temp == "293.6" ]]
 				then
 					temp="296"
 				fi
