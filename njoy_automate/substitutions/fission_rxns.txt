@@ -1,5 +1,0 @@
-3 452 \'total nubar\'\/\
-3 456 \'prompt nubar\'\/\
-3 455 \'delayed nubar\'\/\
-5 18 \'prompt chi\'\/\
-5 455 \'delayed chi\'
