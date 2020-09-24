@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-if [[ $1 == *"lanl"* ]] || [[ $1 == *"xmas" ]] 
+if [[ $1 == *"lanl"* ]] || [[ $1 == *"xmas"* ]] 
 then
 	if [[ $1 == "lanl30" ]] 
 	then
