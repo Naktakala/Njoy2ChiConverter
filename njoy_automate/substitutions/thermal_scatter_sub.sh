@@ -24,7 +24,7 @@ then
 
 	# thermr\\
 	# 42 -27 -28/\\
-	# 7 matsub 16 1 1 1 0 1 225 1/\\
+	# 7 matsub 16 1 2 1 0 1 225 1/\\
 	# alt/\\
 	# 0.001 10.0
 
@@ -32,6 +32,7 @@ then
 	cat > tmp.txt <<- END
 		6 222 \'H_in_H2O_inelastic matrix\'
 	END
+	RXN=$( cat tmp.txt )
 	sed -i -e "s|s_alpha_beta_rxns|${RXN}|g" $2
 	sed -i -e "s/-22 -26/-22 -27/g" $2
 	rm tmp.txt

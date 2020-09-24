@@ -1,8 +1,7 @@
 #! /usr/bin/env bash
 
+isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
 temperatures=( "293.6" "400" "500" "600" "800" )
-# isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
-isotopes=( "H-1" )
 grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
 nummoms=( "7" )
 
