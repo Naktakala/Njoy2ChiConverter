@@ -81,10 +81,12 @@ function s_alpha_beta_sub(){
 	fi
 }
 
-temperatures=( "293.6" "400" "500" "600" "800" )
+# temperatures=( "293.6" "400" "500" "600" "800" )
+temperatures=( "296" )
 # isotopes=( "H-1" "O-16" "C-nat" "U-235" "U-238" "Pu-239" )
-isotopes=( "Zr-nat" )
-grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
+isotopes=( "C-nat" )
+# grp_structs=( "1" "3" "5" "31" "lanl30" "lanl70" "lanl80" "lanl187" "lanl618" "xmas172")
+grp_structs=("xmas172")
 nummoms=( "7" )
 
 echo > generate_xs.log

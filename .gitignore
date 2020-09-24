@@ -1,3 +1,5 @@
 *.DS_Store
 njoy_xs
 chi_xs
+*.r
+*.o
