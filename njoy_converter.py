@@ -479,11 +479,11 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       g = entry[0]
       v = entry[1]
       nu_total[G_n-g-1] += v
-
+  
   nu_prompt = np.zeros(G)
   if ("prompt_nubar" in cross_sections):
     prompt_nubar_data = cross_sections["prompt_nubar"]
-    for entry in total_nubar_data:
+    for entry in prompt_nubar_data:
       g = entry[0]
       v = entry[1]
       nu_prompt[G_n-g-1] += v
@@ -522,26 +522,35 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       chi_delayed[G_n-g-1] += v
 
   gamma = np.zeros(J)
+  precursor_fraction = np.zeros(J)
   if (np.sum(nu_delayed)>0 and np.sum(chi_delayed)>0):
     nu_bar_delayed = np.mean(nu_delayed)
-    delayed_frac = np.sum(chi_delayed,axis=0)
-    gamma = nu_bar_delayed*delayed_frac
-
-  # Normalize chi_delayed spectrum to sum to 1
+    precursor_fraction = np.sum(chi_delayed,axis=0)
+    gamma = nu_bar_delayed*precursor_fraction
   chi_delayed /= np.sum(chi_delayed,axis=0)
 
   # ================================= Combine transfer matrices
-
+  # Keys available to all isotopes
   n_to_n_elastic_keys = ["(n,elastic)"]
-  n_to_n_elastic_sab_keys = ["mt230", "mt236"]
-  n_to_n_elastic_freegas_keys = ["mt221"]
-  n_to_n_inelastic_sab_keys = ["mt222", "mt229", "mt235"]
-  n_to_n_inelastic_keys = ["(n,2n)"]
   n_to_g_transfer_keys = [ "(n,g)", "(n,inel)", "(n,np)", 
                            "(n,nd)", "(n,p)", "(n,d)", 
                            "(n,t)", "(n,a)"]
   g_to_g_transfer_keys = ["(g,coherent)", "(g,incoherent)", \
                           "(g,pair_production)"]
+  n_to_n_freegas_keys = ["mt221"]
+
+  # Keys for S(alpha, beta) thermal corrections. Note that this 
+  # will NOT be correct for inelastic scattering if data for 
+  # H2O and ZrH exist in H1 files. As it stands, all reaction 
+  # keys are additive. For isotopes with only one S(alpha, beta) 
+  # material, all other reactions will be skipped over because 
+  # those reactions do not live in the file. A flag could be used to 
+  # choose the correct reaction numbers. 
+
+  # graphite, H in ZrH, Zr in ZrH
+  n_to_n_sab_elastic_keys = ["mt230", "mt226", "mt236"] 
+  # H in H2O, graphite, H in ZrH, Zr in ZrH
+  n_to_n_sab_inelastic_keys = ["mt222", "mt229", "mt226", "mt235"] 
 
   # ===== Get the transfer matrices
   # Adding all the elastic scattering data
@@ -559,22 +568,22 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       nranges_to_nranges_inelastic.append(mat)
 
   # Adding all the free gas elastic scattering data
-  nranges_to_nranges_elastic_freegas = []
-  for rxn in n_to_n_elastic_freegas_keys:
+  nranges_to_nranges_freegas = []
+  for rxn in n_to_n_freegas_keys:
     if rxn in transfer_matrices:
-      nranges_to_nranges_elastic_freegas.append(transfer_matrices[rxn])
+      nranges_to_nranges_freegas.append(transfer_matrices[rxn])
 
   # Adding all the elastic scattering S(\alpha,\beta) data
-  nranges_to_nranges_elastic_sab = []
-  for rxn in n_to_n_elastic_sab_keys:
+  nranges_to_nranges_sab_el = []
+  for rxn in n_to_n_sab_elastic_keys:
     if rxn in transfer_matrices:
-      nranges_to_nranges_elastic_sab.append(transfer_matrices[rxn])
+      nranges_to_nranges_sab_el.append(transfer_matrices[rxn])
 
   # Adding all the inelastic scattering S(\alpha,\beta) data
-  nranges_to_nranges_inelastic_sab = []
-  for rxn in n_to_n_inelastic_sab_keys:
+  nranges_to_nranges_sab_inel = []
+  for rxn in n_to_n_sab_inelastic_keys:
     if rxn in transfer_matrices:
-      nranges_to_nranges_inelastic_sab.append(transfer_matrices[rxn])
+      nranges_to_nranges_sab_inel.append(transfer_matrices[rxn])
 
   # Adding all the neutron to gamma data
   nranges_to_granges = []
@@ -596,13 +605,13 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   for range_data in nranges_to_nranges_inelastic:
     if range_data:
       max_num_moms = max(max_num_moms,len(range_data[0])-2)
-  for range_data in nranges_to_nranges_elastic_freegas:
+  for range_data in nranges_to_nranges_freegas:
     if range_data:
       max_num_moms = max(max_num_moms,len(range_data[0])-2)
-  for range_data in nranges_to_nranges_elastic_sab:
+  for range_data in nranges_to_nranges_sab_el:
     if range_data:
       max_num_moms = max(max_num_moms,len(range_data[0])-2)
-  for range_data in nranges_to_nranges_inelastic_sab:
+  for range_data in nranges_to_nranges_sab_inel:
     if range_data:
       max_num_moms = max(max_num_moms,len(range_data[0])-2)
   for range_data in nranges_to_granges:
@@ -649,51 +658,53 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   transfer_mats_freegas  = np.copy(transfer_mats)
   transfer_mats_sab_el   = np.copy(transfer_mats)
   transfer_mats_sab_inel = np.copy(transfer_mats)
-  transfer_mats_sab      = np.copy(transfer_mats)
 
   # Regular elastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_elastic:
     AddTransferNeutron(range_data)
   sig_s_el = np.sum(transfer_mats[0],axis=1)
-  transfer_mats_standard += transfer_mats
+  transfer_mats_standard = np.copy(transfer_mats)
 
   # Regular inelastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_nranges_inelastic:
     AddTransferNeutron(range_data)
   sig_s_inel = np.sum(transfer_mats[0],axis=1)
-  transfer_mats_standard += transfer_mats
+  for m in range(0,max_num_moms):
+    transfer_mats_standard[m] += transfer_mats[m]
 
   # Regular n,\gamma transfer
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in nranges_to_granges:
     AddTransferNeutron(range_data,offset=G_g)
-  transfer_mats_standard += transfer_mats
+  for m in range(0,max_num_moms):
+    transfer_mats_standard[m] += transfer_mats[m]
 
   # Regular \gamma,\gamma transfer
   transfer_mats = [0.0*mat for mat in transfer_mats]
   for range_data in granges_to_granges:
     AddTransferGamma(range_data)
-  transfer_mats_standard += transfer_mats
+  for m in range(0,max_num_moms):
+    transfer_mats_standard[m] += transfer_mats[m]
   
   # Freegas elastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
-  for range_data in nranges_to_nranges_elastic_freegas:
+  for range_data in nranges_to_nranges_freegas:
     AddTransferNeutron(range_data)
-  sig_s_el_freegas = np.sum(transfer_mats[0],axis=1)
-  transfer_mats_freegas += transfer_mats
+  sig_s_freegas = np.sum(transfer_mats[0],axis=1)
+  transfer_mats_freegas = np.copy(transfer_mats)
 
   # S(alpha,beta) elastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
-  for range_data in nranges_to_nranges_elastic_sab:
+  for range_data in nranges_to_nranges_sab_el:
     AddTransferNeutron(range_data)
   sig_s_el_sab = np.sum(transfer_mats[0],axis=1)
   transfer_mats_sab_el = np.copy(transfer_mats)
   
   # S(alpha,beta) inelastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
-  for range_data in nranges_to_nranges_inelastic_sab:
+  for range_data in nranges_to_nranges_inelastic:
     AddTransferNeutron(range_data)
   sig_s_inel_sab = np.sum(transfer_mats[0],axis=1)
   transfer_mats_sab_inel = np.copy(transfer_mats)
@@ -707,23 +718,25 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   sig_s_uncorr = np.sum(transfer_mats_standard[0],axis=1)
   sig_a = sig_t_uncorr - sig_s_uncorr
   # Correction terms
-  sig_s_freegas = sig_s_el_freegas
   sig_s_sab = sig_s_el_sab + sig_s_inel_sab
   
   # ===== Make the termal scattering corrections
-  # This is a bit complex. The S(\alpha,\beta) thermal scattering
-  # corrections should replace the standard transfer matrix where 
-  # there is overlap, and in all other places, simply be placed
-  # into the transfer matrix.
+  # This is a bit complex. First, the freegas transfer
+  # matrices are overlaid on the standard transfer matrices.
+  # Then, the same process is carried out with the 
+  # inelastic S(alpha, beta) terms. Finally, the elastic
+  # S(alpha, beta) terms are added to the result.
   transfer_mats = np.copy(transfer_mats_standard)
   for m in range(0,max_num_moms):
-    m_transfer_mat_sab = transfer_mats_sab[m]
-    # for nz in np.nonzero(m_transfer_mat_sab):
-    #   transfer_mats[m][nz] = m_transfer_mat_sab[nz]
-    for gprime in range(G):
-      for g in range(G):
-        if (m_transfer_mat_sab[gprime,g] > 1.0e-18):
-          transfer_mats[m][gprime,g] = m_transfer_mat_sab[gprime,g]
+    m_transfer_mat_freegas = transfer_mats_freegas[m]
+    m_transfer_mat_sab_inel = transfer_mats_sab_inel[m]
+    for gprime in range(0,G):
+      for g in range(0,G):
+        if (np.abs(m_transfer_mat_freegas[gprime,g]) > 1.0e-18):
+          transfer_mats[m][gprime,g] = m_transfer_mat_freegas[gprime,g]
+        if (np.abs(m_transfer_mat_sab_inel[gprime,g]) > 1.0e-18):
+          transfer_mats[m][gprime,g] = m_transfer_mat_sab_inel[gprime,g]
+    transfer_mats[m] += transfer_mats_sab_el[m]
 
   # ===== Update cross section vectors
   sig_s = np.sum(transfer_mats[0],axis=1)
@@ -770,8 +783,8 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   return_data["sigma_s_sab"] = sig_s_sab
   return_data["sigma_s_el"] = sig_s_el
   return_data["sigma_s_inel"] = sig_s_inel
-  return_data["sigma_s_el_sab"] = sig_s_el_sab
-  return_data["sigma_s_inel_sab"] = sig_s_inel_sab
+  return_data["sigma_s_sab_el"] = sig_s_el_sab
+  return_data["sigma_s_sab_inel"] = sig_s_inel_sab
   return_data["sigma_f"] = sig_f
   return_data["nu_total"] = nu_total
   return_data["nu_prompt"] = nu_prompt
@@ -780,10 +793,10 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   return_data["chi_delayed"] = chi_delayed
   return_data["decay_constants"] = decay_const
   return_data["gamma"] = gamma
+  return_data["precursor_fraction"] = precursor_fraction
   return_data["inv_velocity"] = inv_v
   return_data["transfer_matrices"] = transfer_mats
   return_data["transfer_matrices_sparsity"] = transfer_mats_nonzeros
-
   return return_data 
 
 #====================================================================
@@ -799,6 +812,7 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
   chi_prompt = data["chi_prompt"]
   chi_delayed = data["chi_delayed"]
   decay_const = data["decay_constants"]
+  precursor_fraction = data["precursor_fraction"]
   gamma = data["gamma"]
   ddt_coeff = data["inv_velocity"] 
   transfer_mats = data["transfer_matrices"]
@@ -876,12 +890,26 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
   cf.write("TRANSFER_MOMENTS_END"+"\n")
 
   if J > 0:
+    cf.write("NU_DELAYED_BEGIN"+"\n")
+    for g in range(0,G):
+      cf.write("{:<4d}".format(g)+ " ")
+      cf.write("{:<g}".format(nu_delayed[g]))
+      cf.write("\n")
+    cf.write("NU_DELAYED_END"+"\n")
+
     cf.write("PRECURSOR_LAMBDA_BEGIN"+"\n")
     for j in range(0,J):
       cf.write("{:<4d}".format(j)+ " ")
       cf.write("{:<g}".format(decay_const[j]))
       cf.write("\n")
     cf.write("PRECURSOR_LAMBDA_END"+"\n")
+
+    cf.write("PRECURSOR_FRACTION_BEGIN"+"\n")
+    for j in range(0,J):
+      cf.write("{:<4d}".format(j)+ " ")
+      cf.write("{:<g}".format(precursor_fraction[j]))
+      cf.write("\n")
+    cf.write("PRECURSOR_FRACTION_END"+"\n")
 
     cf.write("PRECURSOR_GAMMA_BEGIN"+"\n")
     for j in range(0,J):
@@ -1681,19 +1709,18 @@ if __name__ == "__main__":
       njoy_path = os.path.join(njoy_dir, njoy_file)
       
       # Parse NJOY cross section files
-      if "Cnat" in njoy_file and "172g" in njoy_file:
-        print("\nPARSING FILE: " + njoy_path)
-        with open(njoy_path, 'r') as xs_file:
-          raw_njoy_data = ReadNJOYfile(njoy_path)
-      
+      print("\nPARSING FILE: " + njoy_path)
+      with open(njoy_path, 'r') as xs_file:
+        raw_njoy_data = ReadNJOYfile(njoy_path)
+    
 
-        # Reformat raw NJOY data
-        data = BuildCombinedData(raw_njoy_data,plot=True)
+      # Reformat raw NJOY data
+      data = BuildCombinedData(raw_njoy_data,plot=False)
 
-        # Write to ChiTech cross section file
-        chi_file = njoy_file.replace(".txt",".csx")
-        chi_path = os.path.join(chi_dir, chi_file)
-        WriteChiTechFile(data, chi_path)
+      # Write to ChiTech cross section file
+      chi_file = njoy_file.replace(".txt",".csx")
+      chi_path = os.path.join(chi_dir, chi_file)
+      WriteChiTechFile(data, chi_path)
 
         plt.figure(figsize=(12,6))
         plt.semilogx(elasto[:,0]*1e-6,elasto[:,1],"-r",label=r"MT230 Janis")
