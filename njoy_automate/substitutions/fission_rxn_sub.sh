@@ -10,7 +10,7 @@ then
 		5 455 \'delayed chi\'/\\	
 	END
 	RXN=$( cat tmp.txt )
-	sed -i -e sed -i -e "s|fission_rxns|${RXN}|g" $2
+	sed -i -e "s|fission_rxns|${RXN}|g" $2
 	rm tmp.txt
 else
 	sed -i -e "/fission_rxns/d" $2

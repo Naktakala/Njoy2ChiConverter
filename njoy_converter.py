@@ -501,12 +501,9 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       chi_delayed[G_n-g-1] += v
 
   gamma = np.zeros(J)
-  precursor_fraction = np.zeros(J)
   if (np.sum(nu_delayed)>0 and np.sum(chi_delayed)>0):
-    nu_bar_delayed = np.mean(nu_delayed)
-    precursor_fraction = np.sum(chi_delayed,axis=0)
-    gamma = nu_bar_delayed*precursor_fraction
-  chi_delayed /= np.sum(chi_delayed,axis=0)
+    gamma = np.sum(chi_delayed,axis=0)
+  chi_delayed /= gamma
 
   # ================================= Combine transfer matrices
   # Keys available to all isotopes
@@ -768,7 +765,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   return_data["chi_delayed"] = chi_delayed
   return_data["decay_constants"] = decay_const
   return_data["gamma"] = gamma
-  return_data["precursor_fraction"] = precursor_fraction
   return_data["inv_velocity"] = inv_v
   return_data["transfer_matrices"] = transfer_mats
   return_data["transfer_matrices_sparsity"] = transfer_mats_nonzeros
@@ -787,7 +783,6 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
   chi_prompt = data["chi_prompt"]
   chi_delayed = data["chi_delayed"]
   decay_const = data["decay_constants"]
-  precursor_fraction = data["precursor_fraction"]
   gamma = data["gamma"]
   ddt_coeff = data["inv_velocity"] 
   transfer_mats = data["transfer_matrices"]
@@ -835,14 +830,14 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
     cf.write("{:<4d}".format(g)+ " ")
     cf.write("{:<g}".format(nu_prompt[g]))
     cf.write("\n")
-  cf.write("NU_PROMPT_END"+"\n")
+  cf.write("NU_PROMPT_END"+"\n")  
 
   cf.write("CHI_PROMPT_BEGIN"+"\n")
   for g in range(0,G):
     cf.write("{:<4d}".format(g)+ " ")
     cf.write("{:<g}".format(chi_prompt[g]))
     cf.write("\n")
-  cf.write("CHI_PROMPT_END"+"\n")
+  cf.write("CHI_PROMPT_END"+"\n")    
 
   cf.write("DDT_COEFF_BEGIN"+"\n")
   for g in range(0,G):
@@ -865,13 +860,6 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
   cf.write("TRANSFER_MOMENTS_END"+"\n")
 
   if J > 0:
-    cf.write("NU_DELAYED_BEGIN"+"\n")
-    for g in range(0,G):
-      cf.write("{:<4d}".format(g)+ " ")
-      cf.write("{:<g}".format(nu_delayed[g]))
-      cf.write("\n")
-    cf.write("NU_DELAYED_END"+"\n")
-
     cf.write("PRECURSOR_LAMBDA_BEGIN"+"\n")
     for j in range(0,J):
       cf.write("{:<4d}".format(j)+ " ")
@@ -879,19 +867,19 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
       cf.write("\n")
     cf.write("PRECURSOR_LAMBDA_END"+"\n")
 
-    cf.write("PRECURSOR_FRACTION_BEGIN"+"\n")
-    for j in range(0,J):
-      cf.write("{:<4d}".format(j)+ " ")
-      cf.write("{:<g}".format(precursor_fraction[j]))
-      cf.write("\n")
-    cf.write("PRECURSOR_FRACTION_END"+"\n")
-
     cf.write("PRECURSOR_GAMMA_BEGIN"+"\n")
     for j in range(0,J):
       cf.write("{:<4d}".format(j)+ " ")
       cf.write("{:<g}".format(gamma[j]))
       cf.write("\n")
     cf.write("PRECURSOR_GAMMA_END"+"\n")
+
+    cf.write("NU_DELAYED_BEGIN"+"\n")
+    for g in range(0,G):
+      cf.write("{:<4d}".format(g)+ " ")
+      cf.write("{:<g}".format(nu_delayed[g]))
+      cf.write("\n")
+    cf.write("NU_DELAYED_END"+"\n")
 
     cf.write("CHI_DELAYED_BEGIN"+"\n")
     for g in range(0,G):

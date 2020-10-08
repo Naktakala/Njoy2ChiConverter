@@ -104,7 +104,7 @@ then
 
 # delete substitution lines otherwise
 else
-	sed -i -e "/neutron_thermal/d" $2
+	sed -i -e "/thermal_data/d" $2
 	sed -i -e "/s_alpha_beta_thermr/d" $2
 	sed -i -e "/s_alpha_beta_rxns/d" $2
 fi
