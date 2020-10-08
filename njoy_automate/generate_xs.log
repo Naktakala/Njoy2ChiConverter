@@ -1,0 +1,47 @@
+
+C-nat
+Getting ENDF input tapes and NJOY executable
+Running NJOY
+
+ njoy 2016.49  25Jan19                                       09/23/20 19:56:33
+ *****************************************************************************
+
+ moder...                                                                 0.0s
+
+ reconr...                                                                0.0s
+
+ broadr...                                                                0.0s
+
+ unresr...                                                                0.1s
+
+ ---message from unresr---mat  600 has no resonance parameters
+                          copy as is to nout
+
+ heatr...                                                                 0.1s
+
+ thermr...                                                                0.5s
+
+ wrote thermal data for temp = 2.9600E+02                                 3.1s
+
+ thermr...                                                                3.1s
+
+ ***warning***maximum value of beta limits the allowed energy transfer
+ the sct approx. will be used for transfers larger than  2.024 ev.
+
+ wrote thermal data for temp = 2.9600E+02                                 3.4s
+
+ groupr...                                                                3.4s
+
+ ---message from conver---cannot do complete particle production for mt= 28
+                          only mf4/mf5 provided
+
+ ---message from conver---cannot do complete particle production for mt= 91
+                          only mf4/mf5 provided
+
+ ---message from cm2lab---lab normalization problem
+                          mt=  5 e= 2.000E+07 lab sum= 0.000
+
+ moder...                                                                 7.6s
+                                                                          7.7s
+ *****************************************************************************
+Cleaning up
