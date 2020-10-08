@@ -5,27 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-#====================================================================
-def Format1DCrossSection(xs,gs):
-  '''Formats a 1D group average cross-section as 
-     a blocky bargraph type plottable array '''
-  
-  gsr = gs[::-1]
-
-  xs_bar = []
-  e_bar  = []
-  
-  g=0
-  for gsv in gsr:
-    xs_bar.append(xs[g])
-    e_bar.append(gsr[g][2]/1e6)
-
-    xs_bar.append(xs[g])
-    e_bar.append(gsr[g][1]/1e6)
-    g+=1
-  
-  return np.array(xs_bar), e_bar
-
 
 #====================================================================
 def PrintLine(line_num,line):
@@ -706,9 +685,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   sig_s_inel_sab = np.sum(transfer_mats[0],axis=1)
   transfer_mats_sab_inel = np.copy(transfer_mats)
 
-  for m in range(max_num_moms):
-    transfer_mats_sab[m] = transfer_mats_sab_inel[m] + transfer_mats_sab_el[m]
-
   # ===== Store stuff
   # Uncorrected quantities
   sig_t_uncorr = sig_t
@@ -752,7 +728,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
 
   # ===== Plot the matrix
   if plot:
-    Atest = transfer_mats_sab_inel[0]
+    Atest = transfer_mats[0]
     nz = np.nonzero(Atest)
     Atest[nz] = np.log10(Atest[nz]) + 10.0
     
@@ -765,7 +741,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     plt.gca().xaxis.set_ticks_position('top')
     plt.gca().xaxis.set_label_position('top')
     # plt.savefig("SERPENTTransferMatrix.png")
-    plt.show()
 
   #================================== Build return data
   return_data = {}
@@ -1011,6 +986,7 @@ def InfiniteMediumSpectrum(data):
 # Stand-alone usage
 if __name__ == "__main__":
   from shutil import copyfile
+  
   njoy_dir = "njoy_xs"
   chi_dir = "chi_xs"
 
@@ -1023,11 +999,10 @@ if __name__ == "__main__":
   mt229 = np.loadtxt('graphite_xs/graphite_mt229.txt')
 
   plt.close('all')
-
   for njoy_file in os.listdir(njoy_dir):
     if njoy_file.endswith(".txt"):
       njoy_path = os.path.join(njoy_dir, njoy_file)
-      
+
       # Parse NJOY cross section files
       print("\nPARSING FILE: " + njoy_path)
       with open(njoy_path, 'r') as xs_file:
@@ -1042,39 +1017,7 @@ if __name__ == "__main__":
       chi_path = os.path.join(chi_dir, chi_file)
       WriteChiTechFile(data, chi_path)
 
-        plt.figure(figsize=(12,6))
-        plt.semilogx(elasto[:,0]*1e-6,elasto[:,1],"-r",label=r"MT230 Janis")
-
-        xs = data["sigma_t"]
-        gs = data["neutron_gs"]
-        xs, gs = Format1DCrossSection(xs, gs)
-        plt.semilogx(gs,xs,"-k",linewidth=0.5,label=r"MT1")
-
-        xs = data["sigma_s_el"]
-        gs = data["neutron_gs"]
-        xs, gs = Format1DCrossSection(xs, gs)
-        plt.semilogx(gs,xs,"-b",linewidth=0.5,label=r"MT2")
-
-        xs = data["sigma_s_inel_sab"]
-        gs = data["neutron_gs"]
-        xs229, gs = Format1DCrossSection(xs, gs)
-        # plt.semilogx(gs,xs229,"-y",linewidth=0.5,label=r"MT229")
-
-        xs = data["sigma_s_el_sab"]
-        gs = data["neutron_gs"]
-        xs230, gs = Format1DCrossSection(xs, gs)
-        # plt.semilogx(gs,xs230,"-b",linewidth=0.5,label=r"MT230")
-
-        plt.semilogx(gs,xs229+xs230,"-g",linewidth=0.5,label=r"MT229+MT230")
-
-        plt.xlabel("Energy (Mev)")
-        plt.ylabel("Cross section (b)")
-        plt.legend()
-        plt.grid(True)
-        plt.ylim([0.0,10.0])  
-        plt.show()
-
-  # plt.show()
+  plt.show()
   # print(raw_njoy_data["transfer_matrices"]["(n,elastic)"][0])
   # print(raw_njoy_data["transfer_matrices"]["coherent"][11])
   # print(raw_njoy_data["transfer_matrices"]["incoherent"][11])
