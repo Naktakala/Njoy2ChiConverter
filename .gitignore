@@ -7,3 +7,7 @@ chi_xs
 *runNJOY*
 *.log
 
+
+njoy_automate2/NJOY_INPUT.txt
+njoy_automate2/output
+njoy_xs/
