@@ -22,9 +22,27 @@ argparser.add_argument("--path_to_neutron_endf",
                        help="Path to the isotope's endf file for "
                        "incident neutrons",
                        default="",required=True)
+argparser.add_argument("--path_to_sab",
+                       help="Path to the isotope's thermal scattering data",
+                       default="")
+argparser.add_argument("--path_to_gamma_endf",
+                       help="Path to the isotope's endf file for "
+                       "incident gammas",
+                       default="")
 argparser.add_argument("--temperature",
                        help="NJOY temperature output",type=float,
                        default=296.0)                       
+argparser.add_argument("--neutron_group_structure",
+                       help="ign in the NJOY2016 manual. 1 for user specified "
+                       "(requires --custom_neutron_gs_file to be set)",
+                       choices=ign,
+                       type=int,
+                       default=9)
+argparser.add_argument("--neutron_weight_function",
+                       help="Neutron weight function. 1 for user specified "
+                       "(requires --custom_neutron_wt_file to be set)",
+                       choices=niwt,
+                       default=8)
 argparser.add_argument("--output_directory",
                        help="Directory where output file needs to be stored."
                        " If not supplied, will default to current directory.",
@@ -33,28 +51,11 @@ argparser.add_argument("--output_filename",
                        help="Output file name. If not supplied then a default "
                        "file name will be constructed.",
                        default="")                                              
-argparser.add_argument("--path_to_gamma_endf",
-                       help="Path to the isotope's endf file for "
-                       "incident gammas",
-                       default="")
-argparser.add_argument("--path_to_sab",
-                       help="Path to the isotope's thermal scattering data",
-                       default="")
-argparser.add_argument("--neutron_group_structure",
-                       help="ign in the NJOY2016 manual. 1 for user specified "
-                       "(requires --custom_neutron_gs_file to be set)",
-                       choices=ign,
-                       default=9)
 argparser.add_argument("--gamma_group_structure",
                        help="igg in the NJOY2016 manual. 1 for user specified "
                        "(requires --custom_gamma_gs_file to be set)",
                        choices=igg,
                        default=0)
-argparser.add_argument("--neutron_weight_function",
-                       help="Neutron weight function. 1 for user specified "
-                       "(requires --custom_neutron_wt_file to be set)",
-                       choices=niwt,
-                       default=8)
 argparser.add_argument("--gamma_weight_function",
                        help="Gamma weight function. 1 for user specified "
                        "(requires --custom_gamma_wt_file to be set)",
@@ -199,7 +200,7 @@ njoy_input.write("0 ")     #elastic options
                            # 1=compute using ENDF6 format data (if supplied)
 njoy_input.write("0 1 221 1/\n")    
 njoy_input.write(str(args.temperature)+"/\n") 
-njoy_input.write("0.05 100.0/\n")   
+njoy_input.write("0.005 2.0/\n")   
 
 #====================================== Thermr S(a,b)
 if (with_sab):
@@ -210,12 +211,12 @@ if (with_sab):
                             # 0=none
                             # 1=compute as free gas
                             # 2=read s(a,b) and compute matrix
-    njoy_input.write("1 ")     #elastic options
+    njoy_input.write("1 ")  #elastic options
                             # 0=none
                             # 1=compute using ENDF6 format data (if supplied)
-    njoy_input.write("0 1 249 1/\n")    
+    njoy_input.write("0 1 249 0/\n")    
     njoy_input.write(str(args.temperature)+"/\n") 
-    njoy_input.write("0.05 100.0/\n") 
+    njoy_input.write("0.005 2.0/\n") 
 
 #====================================== Groupr
 njoy_input.write("groupr\n")
@@ -229,7 +230,7 @@ njoy_input.write(str(args.gamma_group_structure)+" ")
 njoy_input.write(str(args.neutron_weight_function)+" ")
 njoy_input.write("7 ")              # Legendre order
 njoy_input.write("1 1 1 1/\n")
-njoy_input.write(isotope_symbol+str(isotope_mass_number)+isotope_metastable+"/\n")
+njoy_input.write("'"+isotope_symbol+str(isotope_mass_number)+isotope_metastable+"'/\n")
 njoy_input.write(str(args.temperature)+"/\n") 
 njoy_input.write("0.0/\n") 
 
@@ -238,11 +239,11 @@ njoy_input.write("3 259 'inverse velocity'/\n")
 njoy_input.write("3 221 'free-gas therm scat'/\n") 
 
 njoy_input.write("6/\n") #All MF6 transfer matrices
-njoy_input.write("6 221 'free-gas transfer matrix'/\n")
+njoy_input.write("6 221 'free-gas matrix'/\n")
 
 if (with_sab):
-    njoy_input.write("6 249 'inelasting s(a,b) matrix'/\n")
-    njoy_input.write("6 250 'elasting s(a,b) matrix'/\n")
+    njoy_input.write("6 249 'inelastic_s(a,b) matrix'/\n")
+    njoy_input.write("6 250 'elastic_s(a,b) matrix'/\n")
 
 njoy_input.write("0/\n") #Terminate reaction list
 

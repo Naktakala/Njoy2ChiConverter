@@ -11,3 +11,6 @@ chi_xs
 njoy_automate2/NJOY_INPUT.txt
 njoy_automate2/output
 njoy_xs/
+__pycache__
+
+njoy_converter2/output.cxs
