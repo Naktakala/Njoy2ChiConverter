@@ -1,12 +1,11 @@
 #! /usr/bin/env bash
 
-# thermr called for H2O and ZrH
-if [[ $1 == "H-1" ]] 
+# thermr called for H i	n H2O
+if [[ $1 == "H-1_H2O" ]] 
 then
 	# Load up the thermal data
 	cat > tmp.txt <<-END
-		ln -fs ../endf/neutron_thermal/H_in_H2O_endf.txt tape41\\
-		ln -fs ../endf/neutron_thermal/H_in_ZrH_endf.txt tape42
+		ln -fs ../endf/neutron_thermal/H_in_H2O_endf.txt tape41
 	END
 	DATA=$( cat tmp.txt )
 	sed -i -e "s|thermal_data|${DATA}|g" $2
@@ -22,12 +21,6 @@ then
 	THERMR=$( cat tmp.txt )
 	sed -i -e "s|s_alpha_beta_thermr|${THERMR}|g" $2
 
-	# thermr\\
-	# 42 -27 -28/\\
-	# 7 matsub 16 1 2 1 0 1 225 1/\\
-	# alt/\\
-	# 0.001 10.0
-
 	# Construct the S(alpha,beta) reactions
 	cat > tmp.txt <<- END
 		6 222 \'H_in_H2O_inelastic matrix\'
@@ -37,8 +30,36 @@ then
 	sed -i -e "s/-22 -26/-22 -27/g" $2
 	rm tmp.txt
 
-	# 6 225 \'H_in_ZrH_inelastic matrix\'/\\
-	# 6 226 \'H_in_ZrH_elastic matrix\'
+# thermr called for H in ZrH
+elif [[ $1 == "H-1_ZrH" ]]
+then
+	# Load up the thermal data
+	cat > tmp.txt <<-END
+		ln -fs ../endf/neutron_thermal/H_in_ZrH_endf.txt tape41
+	END
+	DATA=$( cat tmp.txt )
+	sed -i -e "s|thermal_data|${DATA}|g" $2
+
+	# Construct the THERMR input
+	cat > tmp.txt <<-END
+		thermr\\
+		41 -26 -27/\\
+		7 matsub 16 1 2 1 0 1 225 1/\\
+		temp/\\
+		0.001 10.0
+	END
+	THERMR=$( cat tmp.txt )
+	sed -i -e "s|s_alpha_beta_thermr|${THERMR}|g" $2
+
+	# Construct the S(alpha,beta) reactions
+	cat > tmp.txt <<- END
+		6 225 \'H_in_ZrH_inelastic matrix\'/\\
+		6 226 \'H_in_ZrH_elastic matrix\'
+	END
+	RXN=$( cat tmp.txt )
+	sed -i -e "s|s_alpha_beta_rxns|${RXN}|g" $2
+	sed -i -e "s/-22 -26/-22 -27/g" $2
+	rm tmp.txt
 
 # thermr called for graphite
 elif [[ $1 == "C-nat" ]] 

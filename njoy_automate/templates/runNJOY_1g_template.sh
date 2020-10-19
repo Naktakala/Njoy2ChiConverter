@@ -35,7 +35,7 @@ thermr
 0 -90 -26/
 0 matsub 16 1 1 0 0 1 221 1/
 temp/
-0.001 100/
+0.001 10.0/
 s_alpha_beta_thermr/
 groupr
 -22 -26 0 -30/
