@@ -33,6 +33,7 @@ args = argparser.parse_args()
 raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(
     args.path_to_njoy_output,verbose=args.plot)
 
+print("Creating chi-cross-section in file "+args.output_file_path)
 data = Utils_Combiner.BuildCombinedData(raw_njoy_data,plot=args.plot)
 Utils_XSWriter.WriteChiTechFile(data,
     args.output_file_path)

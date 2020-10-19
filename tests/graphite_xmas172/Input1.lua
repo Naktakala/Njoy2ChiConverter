@@ -16,7 +16,7 @@ chiVolumeMesherSetProperty(MATID_FROMLOGICAL,vol0,0)
 
 --########################################## Cross-section
 xs_grph = chiPhysicsTransportXSCreate()
-chiPhysicsTransportXSSet(xs_grph,CHI_XSFILE,"../../chi_xs/Cnat_xmas172g7m_room.csx")
+chiPhysicsTransportXSSet(xs_grph,CHI_XSFILE,"../../output/ENDF-B-VII-1/xmas172/Cnat_graphite.csx")
 xs = chiPhysicsTransportXSGet(xs_grph)
 num_groups = xs["G"]
 for k,v in pairs(xs) do 
@@ -54,17 +54,32 @@ for g=1,num_groups do
 end
 --========== ProdQuad
 pquad0 = chiCreateProductQuadrature(GAUSS_LEGENDRE,24)
-pquad1 = chiCreateProductQuadrature(GAUSS_LEGENDRE,8)
+pquad1 = chiCreateProductQuadrature(GAUSS_LEGENDRE,48)
 --========== Groupset def
 gs0 = chiLBSCreateGroupset(phys1)
 cur_gs = gs0
-chiLBSGroupsetAddGroups(phys1,cur_gs,0,80)
-chiLBSGroupsetSetQuadrature(phys1,cur_gs,pquad0)
+chiLBSGroupsetAddGroups(phys1,cur_gs,0,49)
+chiLBSGroupsetSetQuadrature(phys1,cur_gs,pquad1)
 chiLBSGroupsetSetAngleAggDiv(phys1,cur_gs,1)
 chiLBSGroupsetSetGroupSubsets(phys1,cur_gs,1)
 chiLBSGroupsetSetAngleAggregationType(phys1,cur_gs,LBSGroupset.ANGLE_AGG_SINGLE)
 chiLBSGroupsetSetIterativeMethod(phys1,cur_gs,NPT_GMRES_CYCLES)
-chiLBSGroupsetSetResidualTolerance(phys1,cur_gs,1.0e-4)
+chiLBSGroupsetSetResidualTolerance(phys1,cur_gs,1.0e-8)
+chiLBSGroupsetSetMaxIterations(phys1,cur_gs,300)
+chiLBSGroupsetSetGMRESRestartIntvl(phys1,cur_gs,30)
+-- chiLBSGroupsetSetWGDSA(phys1,cur_gs,30,1.0e-4,false," ")
+-- chiLBSGroupsetSetTGDSA(phys1,cur_gs,30,1.0e-4,false," ")
+
+--========== Groupset def
+gs1 = chiLBSCreateGroupset(phys1)
+cur_gs = gs1
+chiLBSGroupsetAddGroups(phys1,cur_gs,50,80)
+chiLBSGroupsetSetQuadrature(phys1,cur_gs,pquad1)
+chiLBSGroupsetSetAngleAggDiv(phys1,cur_gs,1)
+chiLBSGroupsetSetGroupSubsets(phys1,cur_gs,1)
+chiLBSGroupsetSetAngleAggregationType(phys1,cur_gs,LBSGroupset.ANGLE_AGG_SINGLE)
+chiLBSGroupsetSetIterativeMethod(phys1,cur_gs,NPT_GMRES_CYCLES)
+chiLBSGroupsetSetResidualTolerance(phys1,cur_gs,1.0e-6)
 chiLBSGroupsetSetMaxIterations(phys1,cur_gs,300)
 chiLBSGroupsetSetGMRESRestartIntvl(phys1,cur_gs,30)
 -- chiLBSGroupsetSetWGDSA(phys1,cur_gs,30,1.0e-4,false," ")

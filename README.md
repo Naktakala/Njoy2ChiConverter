@@ -1,5 +1,5 @@
 # Njoy2ChiConverter
-Converts NJoy output to Chi-Tech Multigroup Transport cross-section format (.csx format).
+Prepares NJOY inputs and converts NJOY output to Chi-Tech Multigroup Transport cross-section format (.csx format).
 
 ## How to use this converter
 
@@ -48,3 +48,129 @@ make
 make test
 ```
 
+Next add `njoy` to your environment variables. This may be different depending on your system. For `bash` users, in order to add the current `bin`-directory to your `PATH`-environment variable, type `pwd` and copy the path (let us use the place-holder `<path-to-njoy>` for this path). Next add the following to your `~/.bashrc` file:
+
+```shell
+export PATH=<path-to-njoy>:$PATH
+```
+
+### Step 3: Clone the converter to a folder of your choice
+
+```shell
+cd <folder-of-choice>
+git clone https://github.com/Naktakala/Njoy2ChiConverter
+cd Njoy2ChiConverter
+```
+
+### Step 4: Adapt one of the example scripts to your specific application
+
+The example scripts are a collection of neutron only examples:
+- `example1a.sh`, U235 with an xmas172 neutron group structure
+- `example1b.sh`, same as 1a but using graphite, showcasing how to include S(a,b) thermal scattering
+- `example1c.sh`, same as 1b but now with a custom weighting spectrum
+- `example1d.sh`, same as 1b but with completely custom group structure
+
+And a collection of neutron-gamma examples:
+- `example2a`, O16 with the lanl30 neutron group structure and the lanl12 gamma group structure
+- `example2b`, O16 with the xmas172 neutron group structure and the lanl48 gamma group structure
+
+
+The basic input for each example is:
+```shell
+CWD=$PWD
+
+#================================= Set properties here
+export ENDF_ROOT=/Users/janv4/Desktop/Projects/ENDF/ENDF-B-VII.1
+neutron_file="n-092_U_235.endf"
+
+output_directory="../output/ENDF-B-VII-1/xmas172/"
+output_file_prefix="U235"
+
+#================================= Run NJOY
+cd njoy_automate2
+
+python generate_njoy_mgxs.py \
+--path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
+--temperature=293.6 \
+--neutron_group_structure=22 \
+--output_directory=$output_directory \
+--output_filename=$output_file_prefix.njoy
+
+cd $CWD
+
+#================================= Run converter
+cd njoy_converter2
+
+python njoy_converter2.py \
+--path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
+--output_file_path=$output_directory/$output_file_prefix.csx
+
+cd $CWD
+```
+
+## FAQs:
+
+### FAQ-1: General format of input examples
+The two python scripts are `generate_njoy_mgxs.py` and `njoy_converter2.py`.
+
+The `generate_njoy_mgxs.py` script basically runs NJOY and has the following inputs (most of which are optional):
+```
+# --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
+# --path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \
+# --inelastic_thermal_number=229 \
+# --inelastic_thermal_num_atoms=1 \
+# --elastic_thermal_number=230 \
+# --path_to_gamma_endf= \
+# --temperature=296.0 \
+# --neutron_group_structure=22 \
+# --neutron_weight_function=8 \
+# --output_directory=$output_directory \
+# --output_filename=$output_file_prefix.njoy \
+# --gamma_group_structure=0 \
+# --gamma_weight_function=2 \
+# --custom_neutron_gs_file="" \
+# --custom_gamma_gs_file="" \
+# --custom_neutron_wt_file="" \
+# --custom_gamma_wt_file="" \
+```
+
+The `njoy_converter2.py` script converts NJOY output to Chi-cross-section format. It only has two required inputs:
+```
+cd njoy_converter2
+
+python njoy_converter2.py \
+--path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
+--output_file_path=$output_directory/$output_file_prefix.csx 
+```
+
+### FAQ-2: How to specify S(a,b) thermal scattering
+Simply run `generate_njoy_mgxs.py` with `--inelastic_thermal_number=` and `--inelastic_thermal_num_atoms` options set. This can sometimes be tricky because sometimes one needs `--elastic_thermal_number` as well. Hydrogen in water is tricky in the fact that it requires `--inelastic_thermal_num_atoms=2`. 
+
+There aren't a lot of materials that have S(a,b) inelastic treatment so it is worth doing some homework on them and verifying a semi-infinite medium spectrum like done in the `tests` folder.
+
+### FAQ-3: How to produce neutron-gamma cross-sections?
+The moment you supply the option `--path_to_gamma_endf` then the script will know to run with gamma production and make `--gamma_group_structure` required.
+
+### FAQ-4: Format of a custom weighting spectrum file
+The file is in ENDF TAB1-record format which can be confusing. An example spectrum file is supplied in `njoy_automate2/spectrum_file.txt` and is the same for custom neutron AND gamma spectrums.
+
+Note: remember the `/` terminator and the blank line at the end of the file.
+
+### FAQ-5: Format of a custom group structure file
+The first line of a group structure file is the total number of groups `G`. Then followed by the lowest energy cutoff then a total of `G` upper bin boundaries (all in eV):
+
+```
+# Number of groups G
+6
+# G+1 boundaries, lower bound first then all upper bounds (eV)
+1.0e-5
+5.0e-2
+5.0e-1
+1.0e2
+1.0e5
+1.0e6
+20.0e6/
+
+```
+
+Note: remember the `/` terminator and the blank line at the end of the file.

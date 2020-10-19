@@ -128,14 +128,15 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     # choose the correct reaction numbers. 
     
     # graphite, H in ZrH, Zr in ZrH
-    n_to_n_sab_elastic_keys = ["mt230", "mt226", "mt236","mt250"] 
-    # H in H2O, graphite, H in ZrH, Zr in ZrH
-    n_to_n_sab_inelastic_keys = ["mt222", "mt229", "mt226", "mt235","mt249"]
+    n_to_n_sab_elastic_keys = ["mt230", "mt226", "mt236"] 
     
-    # graphite, H in ZrH, Zr in ZrH
-    n_to_n_sab_elastic_keys = ["mt250"] 
     # H in H2O, graphite, H in ZrH, Zr in ZrH
-    n_to_n_sab_inelastic_keys = ["mt249"]
+    n_to_n_sab_inelastic_keys = ["mt222", "mt229", "mt226", "mt235"]
+    
+    # # graphite, H in ZrH, Zr in ZrH
+    # n_to_n_sab_elastic_keys = ["mt250"] 
+    # # H in H2O, graphite, H in ZrH, Zr in ZrH
+    # n_to_n_sab_inelastic_keys = ["mt249"]
     
 
     # ===== Get the transfer matrices
@@ -315,14 +316,16 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     # inelastic S(alpha, beta) terms. Finally, the elastic
     # S(alpha, beta) terms are added to the result.
     transfer_mats = np.copy(transfer_mats_standard)
+    m0_transfer_mat_freegas = transfer_mats_freegas[0]
+    m0_transfer_mat_sab_inel = transfer_mats_sab_inel[0]
     for m in range(0,max_num_moms):
         m_transfer_mat_freegas = transfer_mats_freegas[m]
         m_transfer_mat_sab_inel = transfer_mats_sab_inel[m]
         for gprime in range(0,G):
             for g in range(0,G):
-                if (np.abs(m_transfer_mat_freegas[gprime,g]) > 1.0e-18):
+                if (np.abs(m0_transfer_mat_freegas[gprime,gprime]) > 1.0e-18):
                     transfer_mats[m][gprime,g] = m_transfer_mat_freegas[gprime,g]
-                if (np.abs(m_transfer_mat_sab_inel[gprime,g]) > 1.0e-18):
+                if (np.abs(m0_transfer_mat_sab_inel[gprime,gprime]) > 1.0e-18):
                     transfer_mats[m][gprime,g] = m_transfer_mat_sab_inel[gprime,g]
         transfer_mats[m] += transfer_mats_sab_el[m]
 
@@ -343,7 +346,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     
     # ===== Plot the matrix
     if plot:
-        Atest = transfer_mats[0]
+        Atest = np.copy(transfer_mats[0])
         nz = np.nonzero(Atest)
         Atest[nz] = np.log10(Atest[nz]) + 10.0
         
