@@ -285,6 +285,7 @@ def ReadNJOYfile(njoy_filename="output"):
 
   njoy_raw_data = {}
 
+
   group_structures = {}
   cross_sections = {}
   transfer_matrices = {}
@@ -526,7 +527,9 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   # graphite, H in ZrH, Zr in ZrH
   n_to_n_sab_elastic_keys = ["mt230", "mt226", "mt236"] 
   # H in H2O, graphite, H in ZrH, Zr in ZrH
-  n_to_n_sab_inelastic_keys = ["mt222", "mt229", "mt226", "mt235"] 
+  n_to_n_sab_inelastic_keys = ["mt222", "mt229", "mt225", "mt235"] 
+  # has S(alpha, beta)
+  sab_treatment = False
 
   # ===== Get the transfer matrices
   # Adding all the elastic scattering data
@@ -560,6 +563,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   for rxn in n_to_n_sab_inelastic_keys:
     if rxn in transfer_matrices:
       nranges_to_nranges_sab_inel.append(transfer_matrices[rxn])
+      sab_treatment = True
 
   # Adding all the neutron to gamma data
   nranges_to_granges = []
@@ -680,7 +684,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   
   # S(alpha,beta) inelastic scatter
   transfer_mats = [0.0*mat for mat in transfer_mats]
-  for range_data in nranges_to_nranges_inelastic:
+  for range_data in nranges_to_nranges_sab_inel:
     AddTransferNeutron(range_data)
   sig_s_inel_sab = np.sum(transfer_mats[0],axis=1)
   transfer_mats_sab_inel = np.copy(transfer_mats)
@@ -701,15 +705,14 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   # S(alpha, beta) terms are added to the result.
   transfer_mats = np.copy(transfer_mats_standard)
   for m in range(0,max_num_moms):
-    m_transfer_mat_freegas = transfer_mats_freegas[m]
-    m_transfer_mat_sab_inel = transfer_mats_sab_inel[m]
+    if (sab_treatment): m_transfer_mat = transfer_mats_sab_inel[m]
+    else: m_transfer_mat = transfer_mats_freegas[m]
     for gprime in range(0,G):
       for g in range(0,G):
-        if (np.abs(m_transfer_mat_freegas[gprime,g]) > 1.0e-18):
-          transfer_mats[m][gprime,g] = m_transfer_mat_freegas[gprime,g]
-        if (np.abs(m_transfer_mat_sab_inel[gprime,g]) > 1.0e-18):
-          transfer_mats[m][gprime,g] = m_transfer_mat_sab_inel[gprime,g]
-    transfer_mats[m] += transfer_mats_sab_el[m]
+        if (np.abs(m_transfer_mat[gprime,g]) > 1.0e-18):
+          transfer_mats[m][gprime,g] = m_transfer_mat[gprime,g]
+    if (sab_treatment): transfer_mats[m] += transfer_mats_sab_el[m]
+    
 
   # ===== Update cross section vectors
   sig_s = np.sum(transfer_mats[0],axis=1)
@@ -1004,18 +1007,19 @@ if __name__ == "__main__":
       njoy_path = os.path.join(njoy_dir, njoy_file)
 
       # Parse NJOY cross section files
-      print("\nPARSING FILE: " + njoy_path)
-      with open(njoy_path, 'r') as xs_file:
-        raw_njoy_data = ReadNJOYfile(njoy_path)
-    
+      if "1000k" in njoy_path:
+        print("\nPARSING FILE: " + njoy_path)
+        with open(njoy_path, 'r') as xs_file:
+          raw_njoy_data = ReadNJOYfile(njoy_path)
+      
 
-      # Reformat raw NJOY data
-      data = BuildCombinedData(raw_njoy_data,plot=False)
+        # Reformat raw NJOY data
+        data = BuildCombinedData(raw_njoy_data,plot=False)
 
-      # Write to ChiTech cross section file
-      chi_file = njoy_file.replace(".txt",".csx")
-      chi_path = os.path.join(chi_dir, chi_file)
-      WriteChiTechFile(data, chi_path)
+        # Write to ChiTech cross section file
+        chi_file = njoy_file.replace(".txt",".csx")
+        chi_path = os.path.join(chi_dir, chi_file)
+        WriteChiTechFile(data, chi_path)
 
   plt.show()
   # print(raw_njoy_data["transfer_matrices"]["(n,elastic)"][0])
