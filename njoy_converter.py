@@ -25,9 +25,9 @@ if __name__ == "__main__":
   # mt230 = np.loadtxt('graphite_xs/graphite_mt230.txt')
   # mt229 = np.loadtxt('graphite_xs/graphite_mt229.txt')
 
-  gs_dirs = ["lanl618g"]
-  temp_dirs = ["room"]
-  isotopes = ["U235"]
+  gs_dirs = []
+  temp_dirs = []
+  isotopes = []
 
   plt.close('all')
   for gs in os.listdir(njoy_dir):
@@ -52,6 +52,6 @@ if __name__ == "__main__":
               data = Combiner.BuildCombinedData(raw_njoy_data,plot=False)
               Writer.WriteChiTechFile(data, chi_file)
               # Info.InfiniteMediumSpectrum(data)
-              Info.ComputeKinf(data)
+              # Info.ComputeKinf(data)
 
-  plt.show()
+  # plt.show()

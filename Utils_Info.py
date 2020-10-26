@@ -85,13 +85,11 @@ def InfiniteMediumSpectrum(data):
   plt.yscale("log")
   plt.xlabel("Energy (MeV)")
   plt.ylabel("$\phi(E)$")
-  plt.show()
 
   if (gamma_bndry_edge_values != []):
     plt.figure(figsize=(6,6))
     plt.plot(gamma_group_bndries, gamma_bndry_edge_values)
     plt.yscale("log")
-    plt.show()
 
 
 #====================================================================
@@ -143,15 +141,3 @@ def ComputeKinf(data):
   plt.yscale("log")
   plt.xlabel("Energy (MeV)")
   plt.ylabel("$\phi(E)$")
-  plt.show()
-
-
-  
-
-
-  
-
-  
-    
-  
-  

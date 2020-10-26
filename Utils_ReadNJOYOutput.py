@@ -281,7 +281,6 @@ def ReadNJOYfile(njoy_filename="output"):
 
   njoy_raw_data = {}
 
-
   group_structures = {}
   cross_sections = {}
   transfer_matrices = {}
@@ -359,7 +358,7 @@ def ReadNJOYfile(njoy_filename="output"):
       if (words[num_words-1] == "matrix"):
         transfer_matrices[words[num_words-3]] = \
           ProcessTransferMatrix(nL,file_lines)
-
+          
       if (words[1] == "mf23" and words[3] == "mt501" ):
         cross_sections["(g,total)"] = \
           ProcessCrossSection(nL,file_lines,header_size=4) 

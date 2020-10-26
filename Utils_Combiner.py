@@ -113,27 +113,20 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   # ================================= Combine transfer matrices
   # Keys available to all isotopes
   n_to_n_elastic_keys = ["(n,elastic)"]
+  n_to_n_inelastic_keys = ["(n,2n)", "(n,3n)", "(n,4n)", "(n,nc)"]
+  n_to_n_freegas_keys = ["mt221"]
   n_to_g_transfer_keys = [ "(n,g)", "(n,inel)", "(n,np)", 
                            "(n,nd)", "(n,p)", "(n,d)", 
                            "(n,t)", "(n,a)"]
   g_to_g_transfer_keys = ["(g,coherent)", "(g,incoherent)", \
                           "(g,pair_production)"]
-  n_to_n_freegas_keys = ["mt221"]
-
-  # Keys for S(alpha, beta) thermal corrections. Note that this 
-  # will NOT be correct for inelastic scattering if data for 
-  # H2O and ZrH exist in H1 files. As it stands, all reaction 
-  # keys are additive. For isotopes with only one S(alpha, beta) 
-  # material, all other reactions will be skipped over because 
-  # those reactions do not live in the file. A flag could be used to 
-  # choose the correct reaction numbers. 
+  
 
   # graphite, H in ZrH, Zr in ZrH
   n_to_n_sab_elastic_keys = ["mt230", "mt226", "mt236"] 
   # H in H2O, graphite, H in ZrH, Zr in ZrH
   n_to_n_sab_inelastic_keys = ["mt222", "mt229", "mt225", "mt235"] 
-  # has S(alpha, beta)
-  sab_treatment = False
+  sab_treatment = False # has S(alpha, beta)
 
   # ===== Get the transfer matrices
   # Adding all the elastic scattering data
@@ -144,11 +137,14 @@ def BuildCombinedData(raw_njoy_data, plot=False):
 
   # Adding all the (n,nxx) data, inelastic data
   nranges_to_nranges_inelastic = []
-  for nn in range(1,24+1):
+  for nn in range(1,40+1):
     rx_name = "(n,n{:02d})".format(nn)
     if rx_name in transfer_matrices:
       mat = transfer_matrices[rx_name]
       nranges_to_nranges_inelastic.append(mat)
+  for rxn in n_to_n_inelastic_keys:
+    if rxn in transfer_matrices:
+      nranges_to_nranges_inelastic.append(transfer_matrices[rxn])
 
   # Adding all the free gas elastic scattering data
   nranges_to_nranges_freegas = []
