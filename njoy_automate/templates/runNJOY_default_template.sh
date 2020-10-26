@@ -38,7 +38,7 @@ temp/
 s_alpha_beta_thermr/
 groupr
 -22 -26 0 -30/
-matsub gs 0 5 nummoms 1 1 1 1/                   GROUP STRUCTURE IS 2ND ENTRY, LEGENDRE MOMENTS IS 5TH
+matsub gs 0 5 7 1 1 1 1/                   GROUP STRUCTURE IS 2ND ENTRY, LEGENDRE MOMENTS IS 5TH
 'isosub'/
 temp/
 0.0
