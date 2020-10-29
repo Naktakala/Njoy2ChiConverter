@@ -1,0 +1,5 @@
+# Number of groups
+1/
+# Group boundaries
+1.0000e-05
+1.4000e+07/
