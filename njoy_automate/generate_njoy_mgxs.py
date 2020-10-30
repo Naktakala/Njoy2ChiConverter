@@ -209,8 +209,12 @@ if (args.path_to_sab != ""):
 
 #====================================== Define output filename
 output_filename = args.output_filename
-if (args.output_filename == ""):
-  output_filename = atomic_symbol+str(mass_number)+".txt"
+if (output_filename == ""):
+  output_filename = atomic_symbol+str(mass_number)+".njoy"
+
+output_directory = args.output_directory
+if (not os.path.isdir(output_directory)):
+  os.makedirs(output_directory)
 
 #====================================== Begin writing input
 with open("NJOY_INPUT.txt","w") as njoy_input:
@@ -310,6 +314,7 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
       for line in lines:
         if (line[0] != '#'):
           njoy_input.write(line)
+    njoy_input.write("\n")
 
   # Custom gamma gs
   if (args.gamma_group_structure == 1):
@@ -318,6 +323,7 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
       for line in lines:
         if (line[0] != '#'):
           njoy_input.write(line)
+    njoy_input.write("\n")
 
   # Custom neutron weight function
   if (args.neutron_weight_function == 1): 
@@ -326,6 +332,7 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
       for line in lines:
         if (line[0] != '#'):
           njoy_input.write(line)
+    njoy_input.write("\n")
 
   njoy_input.write("3/\n") #All MF3 1D cross-sections
   njoy_input.write("3 259 'inverse velocity'/\n") 
@@ -398,15 +405,13 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
   njoy_input.write("stop\n")
   njoy_input.close()
 
-
 #====================================== Run NJOY
 os.system("njoy < NJOY_INPUT.txt")
 os.system("rm tape* NJOY_INPUT.txt")
-print("Copying outputfile to "+args.output_directory+output_filename)
+print("Copying outputfile to "+output_directory+'/'+output_filename)
 
 # if (args.path_to_gamma_endf != ""):
 #     os.system("cat tape56 >>")
-if not os.path.isdir(args.output_directory):
-  os.makedirs(args.output_directory)
-os.system("cp output "+args.output_directory+output_filename)
+
+os.system("cp output "+output_directory+'/'+output_filename)
 os.system("rm output")

@@ -241,6 +241,8 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   transfer_sab_el = np.copy(transfer_mats)
   transfer_sab_inel = np.copy(transfer_mats)
   transfer_freegas = np.copy(transfer_mats)
+  transfer_std = np.copy(transfer_mats)
+  transfer_sab = np.copy(transfer_mats)
 
   # Regular elastic scatter (MT-2)
   transfer_mats = [0.0*mat for mat in transfer_mats]
@@ -276,19 +278,21 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     AddTransferNeutron(range_data)
   transfer_sab_inel = np.copy(transfer_mats)
   sig_s_sab_inel = np.sum(transfer_sab_inel[0],axis=1)
+
+  # Form elastic+inelastic matrices
+  for m in range(0,max_num_moms):
+    transfer_std[m] = transfer_el[m] + transfer_inel[m]
+    transfer_sab[m] = transfer_sab_el[m] + transfer_sab_inel[m]
   
   # Replace MT-2 with thermal treatment
-  transfer_mats = np.copy(transfer_el)
+  transfer_mats = np.copy(transfer_std)
   for m in range(0,max_num_moms):
-    if (sab_treatment): mat_m = transfer_sab_inel[m]
+    if (sab_treatment): mat_m = transfer_sab[m]
     else: mat_m = transfer_freegas[m]
     for gprime in range(0,G):
       for g in range(0,G):
         if (np.abs(mat_m[gprime,g]) > 1.0e-18):
           transfer_mats[m][gprime,g] = mat_m[gprime,g]
-    if (sab_treatment):
-      transfer_mats[m] += transfer_sab_el[m]
-      transfer_mats[m] += transfer_inel[m]
         
   # Regular n,\gamma transfer <- add to above
   for range_data in nranges_to_granges:

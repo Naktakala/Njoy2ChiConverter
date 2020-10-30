@@ -6,6 +6,7 @@ import argparse
 import Utils_ReadNJOYOutput
 import Utils_Combiner
 import Utils_ChiWriter
+import Utils_Info
 
 #====================================== Check version
 if sys.version_info[0] < 3:
@@ -30,11 +31,13 @@ argparser.add_argument("--plot",
 args = argparser.parse_args()                                            
 
 #====================================== Executes scripts
-raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(args.path_to_njoy_output)
-
-print("Creating chi-cross-section in file "+args.output_file_path)
 outdir = "/".join(args.output_file_path.split("/")[:-1])
 if not os.path.isdir(outdir): 
 	os.makedirs(outdir)
+
+raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(args.path_to_njoy_output)
+print("Creating chi-cross-section in file "+args.output_file_path)
 data = Utils_Combiner.BuildCombinedData(raw_njoy_data,plot=args.plot)
 Utils_ChiWriter.WriteChiTechFile(data,args.output_file_path)
+# Utils_Info.ComputeKinf(data)
+
