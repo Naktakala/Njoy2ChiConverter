@@ -9,8 +9,8 @@ export NEUTRON_ROOT=neutron_root
 export SAB_ROOT=sab_root
 neutron_file="isotope.endf"
 sab_file="isomol.endf"
-njoy_directory="${CWD}/njoy_xs/gsname/Tname/"
-chi_directory="${CWD}/chi_xs/gsname/Tname/"
+njoy_directory="${CWD}/njoy_xs/gsname/Tname"
+chi_directory="${CWD}/chi_xs/gsname/Tname"
 output_file_prefix="outfile"
 
 if [[ $1 == '0' ]] || [[ $1 == '1' ]]
@@ -41,8 +41,8 @@ then
   cd njoy_converter
 
   python njoy_converter.py \
-  --path_to_njoy_output="${njoy_directory}${output_file_prefix}.njoy" \
-  --output_file_path="${chi_directory}${output_file_prefix}.csx"
+  --path_to_njoy_output="${njoy_directory}/${output_file_prefix}.njoy" \
+  --output_file_path="${chi_directory}/${output_file_prefix}.csx"
 
   cd $CWD
 fi
