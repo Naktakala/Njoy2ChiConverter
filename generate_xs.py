@@ -5,6 +5,7 @@ import functions as fcts
 opt = 0
 neutron_root = '/Users/zachhardy/endf/neutron'
 sab_root = '/Users/zachhardy/endf/neutron_thermal'
+plot = False
 
 #===== Parse any command line arguments
 if len(sys.argv) > 1:
@@ -19,11 +20,14 @@ assert opt in [0,1,2], "Invalid opt. Must be 0, 1, or 2."
 assert os.path.isdir(neutron_root), "Invalid neutron root."
 assert os.path.isdir(sab_root), "Invalid S(alpha,beta) root."
 
-
-isotopes = [('H1','ZrH'),('Zrnat','ZrH'),('U235',''),('U238','')]
-grp_structs = ['1g','3g','5g','6g','31g','lanl30g',
-               'lanl70g','lanl80g','lanl618g','xmas172g']
+isotopes = [('H1','ZrH'), ('Zrnat','ZrH'), ('U235',''), ('U238','')]
+grp_structs = ['1g','3g','5g','6g','31g','lanl30g','lanl70g',
+               'lanl80g','lanl187g','lanl618g','xmas172g']
 temperatures = [293.6,400,500,600,800,1000]
+
+# isotopes = [('H1','ZrH'), ('Zrnat','ZrH'),('U235',''),('U238','')]
+# grp_structs = ['xmas172g']
+# temperatures = [293.6]
 
 #===== Loop over isotopes
 for isotope,molecule in isotopes:
@@ -97,6 +101,9 @@ for isotope,molecule in isotopes:
               if 'n_atoms' in line:
                 if n_atoms is None: line = ''
                 else: line = line.replace('n_atoms',str(n_atoms))
+              #===== Replace plot
+              if 'plot' in line:
+                if not plot: line = ''
             fout.write(line)
       os.system(". ./run.sh "+str(opt))
       os.system("rm run.sh")

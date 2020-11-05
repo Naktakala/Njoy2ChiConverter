@@ -42,7 +42,8 @@ then
 
   python njoy_converter.py \
   --path_to_njoy_output="${njoy_directory}/${output_file_prefix}.njoy" \
-  --output_file_path="${chi_directory}/${output_file_prefix}.csx"
+  --output_file_path="${chi_directory}/${output_file_prefix}.csx" \
+  --plot
 
   cd $CWD
 fi

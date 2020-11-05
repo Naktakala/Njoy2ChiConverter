@@ -1,6 +1,7 @@
 import sys
 import os
-import numpy as np 
+import numpy as np
+from numpy.core.numeric import cross 
 
 #====================================================================
 def PrintLine(line_num,line):
@@ -143,7 +144,6 @@ def ProcessDelayedChi(nL_i, lines):
     nL += 1
     words = lines[nL].split()
     num_words = len(words)
-
   return matrix
 
 #====================================================================
@@ -154,9 +154,15 @@ def ProcessTransferMatrix(nL_i, lines):
       lines   An array of file lines.
     
     return:
-      A table containing the group wise transfer coefficients. '''    
+      A table containing the group wise transfer coefficients. '''  
   matrix = []
-  # Skip 4 lines
+
+  # Check if isotropic or Legendre
+  isotropic = False
+  if "isotropic" in lines[nL_i+2]: 
+    isotropic = True
+
+  # Skip to start of matrix
   add_skip = 0
   if lines[nL_i+1].find("particle emission")>=0 or \
        lines[nL_i+2].find("spectrum constant below")>=0:
@@ -182,12 +188,21 @@ def ProcessTransferMatrix(nL_i, lines):
 
     # Develop table entry
     if words[0] != "normalization":
-      entry = []
-      entry.append(int(words[0])-1) # gprime
-      entry.append(int(words[1])-1) # g
-      for i in range(2,num_words):
-         entry.append(float(words[i]))
-      matrix.append(entry)
+      if not isotropic:
+        entry = []
+        gprime = int(words[0])-1
+        g = int(words[1])-1
+        entry = [gprime, g]
+        for i in range(2,num_words):
+          entry.append(float(words[i]))
+        matrix.append(entry)
+        
+      elif isotropic:
+        gprime = int(words[0])-1
+        g = int(words[1])-1
+        for i in range(2,num_words):
+          entry = [gprime, g+i-2, float(words[i])]
+          matrix.append(entry)
 
     nL += 1
     words = lines[nL].split()
@@ -264,7 +279,6 @@ def ProcessTransferMatrixB(nL_i, lines, process_overflow=False):
       nL += 1
       words = lines[nL].split()
       num_words = len(words)
-      
   return matrix  
 
 #====================================================================
@@ -318,16 +332,20 @@ def ReadNJOYfile(njoy_filename="output"):
           ProcessCrossSection(nL,file_lines)        
 
       if (words[2] == "3" and words[5] == "4" ):
-        cross_sections["(n,inelastic)"] = \
+        cross_sections["(n,inel)"] = \
           ProcessCrossSection(nL,file_lines) 
 
       if (words[2] == "3" and words[5] == "16" ):
         cross_sections["(n,2n)"] = \
           ProcessCrossSection(nL,file_lines) 
 
-      if (words[2] == "3" and words[4] == "mt259"):
-        cross_sections["inv_velocity"] = \
+      if (words[2] == "3" and words[5] == "17"):
+        cross_sections["(n,3n)"] = \
           ProcessCrossSection(nL,file_lines)
+
+      if (words[2] == "3" and words[5] == "37"):
+        cross_sections["(n,4n)"] = \
+            ProcessCrossSection(nL,file_lines)
       
       if (words[2] == "3" and words[5] == "18"):
         cross_sections["(n,fission)"] = \
@@ -345,6 +363,39 @@ def ReadNJOYfile(njoy_filename="output"):
         cross_sections["delayed_nubar"] = \
           ProcessCrossSection(nL,file_lines)
 
+      for nn in range(1,40+1):
+        mt = str(50 + nn)
+        rxn = "(n,n{:02d})".format(nn)
+        if (words[2] == "3" and words[5] == mt):
+          cross_sections[rxn] = \
+            ProcessCrossSection(nL,file_lines)
+      
+      if (words[2] == "3" and words[5] == "91"):
+        cross_sections["(n,nc)"] = \
+          ProcessCrossSection(nL,file_lines)
+      
+      if (words[2] == "3" and words[4] == "mt102"):
+        cross_sections["(n,g)"] = \
+          ProcessCrossSection(nL,file_lines)
+
+      if (words[2] == "3" and words[4] == "mt221"):
+        cross_sections["free_gas"] = \
+          ProcessCrossSection(nL,file_lines)
+
+      inel_sab = ["mt222","mt229","mt225","mt235"]
+      el_sab = ["mt230","mt226","mt236"]
+      if (words[2] == "3" and words[4] in inel_sab):
+        cross_sections["inelastic_s(a,b)"] = \
+          ProcessCrossSection(nL,file_lines)
+      
+      if (words[2] == "3" and words[4] in el_sab):
+        cross_sections["elastic_s(a,b)"] = \
+          ProcessCrossSection(nL,file_lines)
+
+      if (words[2] == "3" and words[4] == "mt259"):
+        cross_sections["inv_velocity"] = \
+          ProcessCrossSection(nL,file_lines)
+
       if (words[2] == "5" and words[5] == "18"):
         cross_sections["prompt_chi"] = \
           ProcessPromptChi(nL,file_lines,4)
@@ -356,8 +407,9 @@ def ReadNJOYfile(njoy_filename="output"):
           ProcessDelayedChi(nL,file_lines)
 
       if (words[num_words-1] == "matrix"):
-        transfer_matrices[words[num_words-3]] = \
-          ProcessTransferMatrix(nL,file_lines)
+        if (words[num_words-3] != "(n,fission)"):
+          transfer_matrices[words[num_words-3]] = \
+            ProcessTransferMatrix(nL,file_lines)
           
       if (words[1] == "mf23" and words[3] == "mt501" ):
         cross_sections["(g,total)"] = \

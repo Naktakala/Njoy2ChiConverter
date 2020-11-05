@@ -191,10 +191,10 @@ if (args.path_to_gamma_endf != ""):
     gamma_file.close()
 
 #====================================== Extract info from S(a,b) file
-with_sab = False 
+has_sab = False 
 material_number_sab = 0
 if (args.path_to_sab != ""):
-  with_sab = True
+  has_sab = True
   os.system("ln -fs "+args.path_to_sab+" tape51")
 
   with open("tape51","r") as sab_file:
@@ -275,7 +275,7 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
   njoy_input.write("0.005 5.0/\n")   
 
   #====================================== Thermr S(a,b)
-  if (with_sab):
+  if (has_sab):
     njoy_input.write("thermr\n")
     njoy_input.write("51 -25 -26/\n")
     njoy_input.write(str(material_number_sab)+" "+str(material_number)+" 16 1 ")
@@ -293,7 +293,7 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
 
   #====================================== Groupr
   njoy_input.write("groupr\n")
-  if (with_sab):
+  if (has_sab):
     njoy_input.write("-21 -26 0 -30\n")
   else:
     njoy_input.write("-21 -25 0 -30\n")
@@ -336,8 +336,14 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
 
   njoy_input.write("3/\n") #All MF3 1D cross-sections
   njoy_input.write("3 259 'inverse velocity'/\n") 
-  njoy_input.write("3 221 'free-gas therm scat'/\n") 
-  if has_fission:
+  njoy_input.write("3 221 'free-gas'/\n") 
+  if (has_sab):
+    njoy_input.write("3 " + args.inelastic_thermal_number + \
+                     " 'inelastic s(a,b)'/\n")
+    if (args.elastic_thermal_number != ""):
+      njoy_input.write("3 " + args.elastic_thermal_number + \
+                       " 'elastic s(a,b)'/\n")
+  if (has_fission):
     njoy_input.write("3 452 'total nubar'/\n")
     njoy_input.write("3 456 'prompt nubar'/\n")
     njoy_input.write("3 455 'delayed nubar'/\n")
@@ -346,7 +352,7 @@ with open("NJOY_INPUT.txt","w") as njoy_input:
   njoy_input.write("6/\n") #All MF6 transfer matrices
   njoy_input.write("6 221 'free-gas matrix'/\n")
 
-  if (with_sab):
+  if (has_sab):
     njoy_input.write("6 " + args.inelastic_thermal_number + \
                      " 'inelastic_s(a,b) matrix'/\n")
     if (args.elastic_thermal_number != ""):
