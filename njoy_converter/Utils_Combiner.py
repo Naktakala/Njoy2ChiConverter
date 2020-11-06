@@ -84,9 +84,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       v = entry[1]
       sig_inel_sab[G_n-g-1] += v
 
-  if (with_sab):
-    sig_freegas *= 0.0
-
   sig_nxn = np.zeros(G)
   for nn in range(2,4+1):
     rx = "(n,{:01d}n)".format(nn)
@@ -320,6 +317,10 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   transfer_sab_el = np.copy(transfer_mats)
   transfer_sab_inel = np.copy(transfer_mats)
   transfer_freegas = np.copy(transfer_mats)
+
+  #===============
+  # with_sab = False
+  #===============
  
   # Regular elastic scatter (MT-2)
   transfer_mats = [0.0*mat for mat in transfer_mats]
@@ -381,7 +382,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
         if (np.abs(mat[gprime,g]) > 1.0e-18):
           transfer_mats[m][gprime,g] -= transfer_el[m][gprime,g]
 
-  # Compute new sigma_t, sigma_a, sigma_t
+  # Compute new sigma_t, sigma_a, sigma_s
   sig_a = sig_t - sig_el - sig_inel
   sig_s = np.sum(transfer_mats[0],axis=1)
   sig_sab = sig_el_sab + sig_inel_sab
@@ -399,7 +400,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   for range_data in granges_to_granges:
     AddTransferGamma(range_data)
 
-  # ===== Compute total scattering and absorption
+  # ===== Print outs
   diff_el = np.sum(sig_el - np.sum(transfer_el[0],axis=1))
   print('\nElastic:\n\t', diff_el)
   diff_inel = np.sum(sig_inel - np.sum(transfer_inel[0],axis=1))
@@ -459,9 +460,9 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     ax[1].semilogx(nbin_center,sig_s,label=r"$\sigma_s$")
     ax[1].semilogx(nbin_center,sig_el,label=r"$\sigma_s$ elastic")
     ax[1].semilogx(nbin_center,sig_inel,label=r"$\sigma_s$ inelastic")
-    if np.sum(sig_freegas) > 0.0:
+    if (not with_sab):
       ax[1].semilogx(nbin_center,sig_freegas,label=r"$\sigma_s$ freegas")
-    if np.sum(sig_sab) > 0.0:
+    else:
       ax[1].semilogx(nbin_center,sig_sab,label=r"$\sigma_s$ total SAB")
       ax[1].semilogx(nbin_center,sig_el_sab,label=r"$\sigma_s$ elastic SAB")
       ax[1].semilogx(nbin_center,sig_inel_sab,label=r"$\sigma_s$ inelastic SAB")

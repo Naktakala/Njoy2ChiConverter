@@ -188,18 +188,17 @@ def ProcessTransferMatrix(nL_i, lines):
 
     # Develop table entry
     if words[0] != "normalization":
+      gprime = int(words[0])-1
+      g = int(words[1])-1
+      entry = []
+      
       if not isotropic:
-        entry = []
-        gprime = int(words[0])-1
-        g = int(words[1])-1
         entry = [gprime, g]
         for i in range(2,num_words):
           entry.append(float(words[i]))
         matrix.append(entry)
         
       elif isotropic:
-        gprime = int(words[0])-1
-        g = int(words[1])-1
         for i in range(2,num_words):
           entry = [gprime, g+i-2, float(words[i])]
           matrix.append(entry)
