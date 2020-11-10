@@ -74,6 +74,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       g = entry[0]
       v = entry[1]
       sig_el_sab[G_n-g-1] += v
+    with_sab = True
 
   sig_inel_sab = np.zeros(G)
   if ("inelastic_s(a,b)" in cross_sections):
@@ -83,6 +84,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       g = entry[0]
       v = entry[1]
       sig_inel_sab[G_n-g-1] += v
+    with_sab = True
 
   sig_nxn = np.zeros(G)
   for nn in range(2,4+1):
@@ -187,7 +189,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   n_to_n_sab_inel_keys = ["mt222", "mt229", 
                           "mt225", "mt235"]
   n_to_n_sab_el_keys = ["mt230", "mt226", "mt236"] 
-  with_sab = False # boolean for existing S(alpha,beta)
   # Neutron to gamma reactions
   n_to_g_transfer_keys = ["(n,g)", "(n,inel)", "(n,np)", 
                           "(n,nd)", "(n,p)", "(n,d)", 
@@ -281,7 +282,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   transfer_mats = []
   for m in range(0,max_num_moms):
     transfer_mats.append(np.zeros((G,G)))
-  transfer_mats_nonzeros = []
 
   #=======================================
   # Lambda-ish to add neutron data
@@ -365,6 +365,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   for m in range(0,max_num_moms):
     transfer_mats[m] += transfer_el[m]
     transfer_mats[m] += transfer_inel[m]
+    transfer_mats[m] += transfer_nxn[m]
     if (with_sab):
       transfer_mats[m] += transfer_sab_el[m]
       transfer_mats[m] += transfer_sab_inel[m]
@@ -416,14 +417,15 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   print('\n')
   
   # ===== Determine sparsity of the transfer matrices
+  transfer_mats_nonzeros = []
   for m in range(0,max_num_moms):
     mat_non_zeros = []
     for gprime in range(0,G):
       non_zeros = []
       for g in range(0,G):
-        if (abs(transfer_mats[m][gprime,g]) > 1.0e-18):
+        if (np.abs(transfer_mats[m][gprime,g]) > 1.0e-16):
           non_zeros.append(g)
-          mat_non_zeros.append(non_zeros)
+      mat_non_zeros.append(non_zeros)
     transfer_mats_nonzeros.append(mat_non_zeros)
 
   # ===== Plot the matrix

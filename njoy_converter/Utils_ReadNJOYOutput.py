@@ -61,7 +61,6 @@ def ProcessCrossSection(nL_i, lines,header_size=5,line_incr=1):
 
     words = lines[nL].split()
     num_words = len(words)
-
   return xs
 
 #====================================================================
@@ -95,6 +94,7 @@ def ProcessPromptChi(nL_i, lines, header_size=4, line_incr=1):
     nL += line_incr
     words = lines[nL].split()
     num_words = len(words)
+  assert xs != [], "Error processing prompt chi."
   return xs
 
 #====================================================================
