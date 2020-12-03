@@ -147,7 +147,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     decay_const = np.asarray(decay_const)
   J = len(decay_const) # number of precursor groups
 
-
   nu_delayed = np.zeros(G)
   if ("delayed_nubar" in cross_sections):
     data = cross_sections["delayed_nubar"]
@@ -317,10 +316,6 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   transfer_sab_el = np.copy(transfer_mats)
   transfer_sab_inel = np.copy(transfer_mats)
   transfer_freegas = np.copy(transfer_mats)
-
-  #===============
-  # with_sab = False
-  #===============
  
   # Regular elastic scatter (MT-2)
   transfer_mats = [0.0*mat for mat in transfer_mats]
@@ -341,24 +336,22 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   transfer_nxn = np.copy(transfer_mats)
 
   # Freegas thermal scattering
-  if (not with_sab):
-    transfer_mats = [0.0*mat for mat in transfer_mats]
-    for range_data in nranges_to_nranges_freegas:
-      AddTransferNeutron(range_data)
-    transfer_freegas = np.copy(transfer_mats)
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_freegas:
+    AddTransferNeutron(range_data)
+  transfer_freegas = np.copy(transfer_mats)
 
   # Elastic S(alpha, beta)
-  if (with_sab):
-    transfer_mats = [0.0*mat for mat in transfer_mats]
-    for range_data in nranges_to_nranges_sab_el:
-      AddTransferNeutron(range_data)
-    transfer_sab_el = np.copy(transfer_mats)
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_sab_el:
+    AddTransferNeutron(range_data)
+  transfer_sab_el = np.copy(transfer_mats)
     
-    # Inelastic S(alpha, beta)
-    transfer_mats = [0.0*mat for mat in transfer_mats]
-    for range_data in nranges_to_nranges_sab_inel:
-      AddTransferNeutron(range_data)
-    transfer_sab_inel = np.copy(transfer_mats)
+  # Inelastic S(alpha, beta)
+  transfer_mats = [0.0*mat for mat in transfer_mats]
+  for range_data in nranges_to_nranges_sab_inel:
+    AddTransferNeutron(range_data)
+  transfer_sab_inel = np.copy(transfer_mats)
 
   # Combine matrices
   transfer_mats = [0.0*mat for mat in transfer_mats]
@@ -367,21 +360,17 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     transfer_mats[m] += transfer_inel[m]
     transfer_mats[m] += transfer_nxn[m]
     if (with_sab):
-      transfer_mats[m] += transfer_sab_el[m]
-      transfer_mats[m] += transfer_sab_inel[m]
       transfer_sab[m] = transfer_sab_el[m] + \
                         transfer_sab_inel[m]
-    else:
-      transfer_mats[m] += transfer_freegas[m]
   
-  # Remove MT-2 where thermal treatment overlaps
+  # Apply thermal treatment
   for m in range(0,max_num_moms):
     if (with_sab): mat = transfer_sab[m]
     else: mat = transfer_freegas[m]
     for gprime in range(0,G):
       for g in range(0,G):
         if (np.abs(mat[gprime,g]) > 1.0e-18):
-          transfer_mats[m][gprime,g] -= transfer_el[m][gprime,g]
+          transfer_mats[m][gprime,g] = mat[gprime,g]
 
   # Compute new sigma_t, sigma_a, sigma_s
   sig_a = sig_t - sig_el - sig_inel
@@ -430,7 +419,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
 
   # ===== Plot the matrix
   if plot:
-    Atest = transfer_mats[0]
+    Atest = np.copy(transfer_mats[0])
     nz = np.nonzero(Atest)
     Atest[nz] = np.log10(Atest[nz]) + 10.0
     
@@ -454,12 +443,12 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     fig, ax = plt.subplots(ncols=2, figsize=(6,6))
     ax[0].semilogx(nbin_center,sig_t,label=r"$\sigma_t$")
     ax[0].semilogx(nbin_center,sig_a,label=r"$\sigma_a$")
-    ax[0].semilogx(nbin_center,sig_s,label=r"$\sigma_s$")
+    ax[0].semilogx(nbin_center,sig_s, label=r"$\sigma_s$")
     ax[0].legend()
     ax[0].grid(True)
   
     #================================== Plot scattering
-    ax[1].semilogx(nbin_center,sig_s,label=r"$\sigma_s$")
+    # ax[1].semilogx(nbin_center,sig_s,label=r"$\sigma_s$")
     ax[1].semilogx(nbin_center,sig_el,label=r"$\sigma_s$ elastic")
     ax[1].semilogx(nbin_center,sig_inel,label=r"$\sigma_s$ inelastic")
     if (not with_sab):
@@ -470,6 +459,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
       ax[1].semilogx(nbin_center,sig_inel_sab,label=r"$\sigma_s$ inelastic SAB")
     ax[1].legend()
     ax[1].grid(True)
+
     plt.show()
 
   #================================== Build return data
