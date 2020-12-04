@@ -7,7 +7,7 @@ from numpy.core.numeric import cross
 from numpy.lib.function_base import diff
 
 #====================================================================
-def BuildCombinedData(raw_njoy_data, plot=False):
+def BuildCombinedData(raw_njoy_data, plot=False, verbose=False):
   ''' Combines enjoy raw data into a dictionary of vectors and matrices '''
   # ================================= Get dictionaries
   group_structures = raw_njoy_data["group_structures"]
@@ -391,19 +391,20 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     AddTransferGamma(range_data)
 
   # ===== Print outs
-  diff_el = np.sum(sig_el - np.sum(transfer_el[0],axis=1))
-  print('\nElastic:\n\t', diff_el)
-  diff_inel = np.sum(sig_inel - np.sum(transfer_inel[0],axis=1))
-  print('\nInelastic:\n\t', diff_inel)
-  if (with_sab):
-    diff_sab_el = np.sum(sig_el_sab - np.sum(transfer_sab_el[0],axis=1))
-    print('\nElastic S(alpha, beta):\n\t', diff_sab_el)
-    diff_sab_inel = np.sum(sig_inel_sab - np.sum(transfer_sab_inel[0],axis=1))
-    print('\nInelastic S(alpha, beta):\n\t', diff_sab_inel)
-  else:
-    diff_freegas = np.sum(sig_freegas - np.sum(transfer_freegas[0],axis=1))
-    print('\nFreegas:\n\t', diff_freegas)
-  print('\n')
+  if verbose:
+    diff_el = np.sum(sig_el - np.sum(transfer_el[0],axis=1))
+    print('\nElastic:\n\t', diff_el)
+    diff_inel = np.sum(sig_inel - np.sum(transfer_inel[0],axis=1))
+    print('\nInelastic:\n\t', diff_inel)
+    if (with_sab):
+      diff_sab_el = np.sum(sig_el_sab - np.sum(transfer_sab_el[0],axis=1))
+      print('\nElastic S(alpha, beta):\n\t', diff_sab_el)
+      diff_sab_inel = np.sum(sig_inel_sab - np.sum(transfer_sab_inel[0],axis=1))
+      print('\nInelastic S(alpha, beta):\n\t', diff_sab_inel)
+    else:
+      diff_freegas = np.sum(sig_freegas - np.sum(transfer_freegas[0],axis=1))
+      print('\nFreegas:\n\t', diff_freegas)
+    print('\n')
   
   # ===== Determine sparsity of the transfer matrices
   transfer_mats_nonzeros = []
@@ -448,7 +449,7 @@ def BuildCombinedData(raw_njoy_data, plot=False):
     ax[0].grid(True)
   
     #================================== Plot scattering
-    # ax[1].semilogx(nbin_center,sig_s,label=r"$\sigma_s$")
+    ax[1].semilogx(nbin_center,sig_s,label=r"$\sigma_s$")
     ax[1].semilogx(nbin_center,sig_el,label=r"$\sigma_s$ elastic")
     ax[1].semilogx(nbin_center,sig_inel,label=r"$\sigma_s$ inelastic")
     if (not with_sab):
@@ -469,12 +470,12 @@ def BuildCombinedData(raw_njoy_data, plot=False):
   return_data["sigma_t"] = sig_t
   return_data["sigma_a"] = sig_a
   return_data["sigma_s"] = sig_s
+  return_data["sigma_s_el"] = sig_el
+  return_data["sigma_s_inel"] = sig_inel
   return_data["sigma_s_freegas"] = sig_freegas
   return_data["sigma_s_sab"] = sig_sab
   return_data["sigma_s_sab_el"] = sig_el_sab
   return_data["sigma_s_sab_inel"] = sig_inel_sab
-  return_data["sigma_s_el"] = sig_el
-  return_data["sigma_s_inel"] = sig_inel
   return_data["sigma_f"] = sig_f
   return_data["nu_total"] = nu_total
   return_data["nu_prompt"] = nu_prompt
