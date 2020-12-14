@@ -8,6 +8,7 @@ import matplotlib.cm as cm
 def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
   cf = open(chi_filename,'w')
 
+  neutron_gs = data["neutron_gs"]
   sig_t = data["sigma_t"]
   sig_s = data["sigma_s"]
   sig_f = data["sigma_f"]
@@ -26,10 +27,36 @@ def WriteChiTechFile(data,chi_filename="output.cxs",comment="# Output"):
   M = len(transfer_mats)
   J = len(decay_const)
 
+  E_bndrys = np.zeros(G+1)
+  E_cntrs  = np.zeros(G)
+  dE       = np.zeros(G)
+  
+  for g in range(0,G):
+    vals = neutron_gs[g]
+    if g == 0: E_bndrys[g] = float(vals[1])
+    E_bndrys[g+1] = float(vals[2])
+    E_cntrs[g]    = 0.5 * (E_bndrys[g+1] + E_bndrys[g])
+    dE[g]         = E_bndrys[g+1] - E_bndrys[g]
+
+  E_bndrys = E_bndrys[::-1]
+  E_cntrs  = E_cntrs[::-1]
+  dE       = dE[::-1]
+
   cf.write(comment+"\n")
   cf.write("NUM_GROUPS "+str(G)+"\n")
   cf.write("NUM_MOMENTS "+str(M)+"\n")
   cf.write("NUM_PRECURSORS "+str(J)+"\n")
+
+  cf.write("GROUP_STRUCTURE_BEGIN"+"\n")
+  for g in range(0,G):
+    cf.write("G_LOW_MID_HIGH_DE"+ " ")
+    cf.write("{:<4d}".format(g)+ " ")
+    cf.write("{:<10g}".format(E_bndrys[g])+ " ")
+    cf.write("{:<10g}".format(E_cntrs[g])+ " ")
+    cf.write("{:<10g}".format(E_bndrys[g+1])+ " ")
+    cf.write("{:<10g}".format(dE[g])+ " ")
+    cf.write("\n")
+  cf.write("GROUP_STRUCTURE_END"+"\n")
 
   cf.write("SIGMA_T_BEGIN"+"\n")
   for g in range(0,G):

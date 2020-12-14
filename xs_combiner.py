@@ -6,6 +6,7 @@ Date: 12/2020
 '''
 
 import os
+from os.path import isfile
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,7 +26,7 @@ def ParseGroupStructure(val, xs):
     E_bndrys[i]  = val[i][1]
     E_midpts[i]  = 0.5*(val[i][2] + val[i][1])
     dE[i]        = val[i][2] - val[i][1]
-  E_bndrys[G-1] = val[G-1][2]
+  E_bndrys[G] = val[G-1][2]
 
   if 'G' not in xs:
     xs['G']        = G
@@ -48,55 +49,95 @@ def ParseGroupStructure(val, xs):
 ############################################################
 if __name__ == "__main__":
 
-  rxns = ['sigma_t', 'sigma_a', 'sigma_s', 'sigma_f', 
-          'sigma_s_el', 'sigma_s_inel', 'sigma_s_nxn', 
-          'sigma_s_freegas', 'sigma_s_sab', 'sigma_s_sab_el', 
-          'sigma_s_sab_inel']
-
-  isotopes = [('U235','',0.001078), ('U238','',0.004259), 
-              ('Zrnat','ZrH',0.031854), ('H1','',0.050966)]
-
+  # isotopes = [('U235','',0.001078), ('U238','',0.004259), 
+  #             ('Zrnat','ZrH',0.031854), ('H1','ZrH',0.050966)]
+  isotopes = [('U235','',0.01), ('U238','',0.01)]
   root = 'njoy_xs'
-  grp_struct = 'xmas172g'
+  grp_struct = 'lanl30g'
   temperature = 'room'
-  
+  plot_xs = False
   
   xs_dir = os.path.join(root, grp_struct, temperature)
   assert os.path.isdir(xs_dir), "Invalid directory."
 
-  xs = {}
+  #===== Get the cross sections
+  data = []
   for iso,mol,density in isotopes:
     isomol = iso+'_'+mol if mol != '' else iso
     filepath = os.path.join(xs_dir, isomol+'.njoy')
     assert os.path.isfile(filepath), "Invalid filepath."
 
     raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(filepath)
-    data = Utils_Combiner.BuildCombinedData(raw_njoy_data)
+    data_ = Utils_Combiner.BuildCombinedData(raw_njoy_data)
+    data += [data_]
 
-    ParseGroupStructure(data['neutron_gs'], xs)
-
-    #===== Iterate over items in dictionary
-    for key,val in data.items():
-
-      #===== Parse reactions, scale by densities
-      if key in rxns:
-        if key not in xs:
-          xs[key] = np.zeros(xs['G'])
-        xs[key] += density * np.array(val)
+  #===== Preliminary calculations
+  Nf = 0.0
+  for i in range(len(data)):
+    if np.sum(data[i]['sigma_f']) > 0.0:
+      Nf += isotopes[i][-1]
   
+  #===== Combine data
+  xs = {}
+  for i in range(len(data)):
+    density = isotopes[i][-1]
 
-  E_midpts = xs['E_midpts'][::-1]
-  sig_t = xs['sigma_t']
-  sig_a = xs['sigma_a']
-  sig_s = xs['sigma_s']
+    #===== Parse group structure
+    ParseGroupStructure(data[i]['neutron_gs'], xs)
+    xs['neutron_gs'] = data[i]['neutron_gs']
 
-  fig = plt.figure(figsize=(6,6))
-  plt.title("UZrH$_{1.6}$ without $S(\\alpha, \\beta)$")
-  plt.xlabel("Neutron Energy (eV)")
-  plt.ylabel("Cross Section (cm$^{-1}$)")
-  plt.semilogx(E_midpts,sig_t,label=r"$\sigma_t$")
-  plt.semilogx(E_midpts,sig_a,label=r"$\sigma_a$")
-  plt.semilogx(E_midpts,sig_s,label=r"$\sigma_s$")
-  plt.legend()
-  plt.grid(True)
-  plt.show()
+    #===== Parse total cross section
+    if 'sigma_t' not in xs:
+      xs['sigma_t'] = np.zeros(xs['G'])
+    xs['sigma_t'] += density * np.array(data[i]['sigma_t'])
+
+    #===== Parse absorption cross section
+    if 'sigma_a' not in xs:
+      xs['sigma_a'] = np.zeros(xs['G'])
+    xs['sigma_a'] += density * np.array(data[i]['sigma_a'])
+
+    #===== Parse scattering cross section
+    if 'sigma_s' not in xs:
+      xs['sigma_s'] = np.zeros(xs['G'])
+    xs['sigma_s'] += density * np.array(data[i]['sigma_s'])
+
+    #===== Parse fission cross section
+    if 'sigma_f' not in xs:
+      xs['sigma_f'] = np.zeros(xs['G'])
+      xs['nu_sigma_f'] = np.zeros(xs['G'])
+      xs['chi_prompt'] = np.zeros(xs['G'])
+    nu = np.array(data[i]['nu_total'])
+    xs['sigma_f'] += density * np.array(data[i]['sigma_f'])
+    xs['nu_sigma_f'] += density * nu * np.array(data[i]['sigma_f'])
+    xs['chi_prompt'] += density/Nf * np.array(data[i]['chi_prompt'])
+
+    #===== Parse transfer matrices
+    tr_mat = np.array(data[i]['transfer_matrices'])
+    if 'transfer_matrices' not in xs:
+      xs['transfer_matrices'] = np.zeros(tr_mat.shape)
+    xs['transfer_matrices'] += density * tr_mat
+
+  Utils_Info.ComputeKinf(xs)
+
+  if plot_xs:
+    E_midpts = xs['E_midpts'][::-1]
+    sig_t = xs['sigma_t']
+    sig_a = xs['sigma_a']
+    sig_s = xs['sigma_s']
+    sig_f = xs['sigma_f']
+    nu_sig_f = xs['nu_sigma_f']
+
+    fig = plt.figure(figsize=(6,6))
+    plt.title("UZrH$_{1.6}$ with $S(\\alpha, \\beta)$")
+    plt.xlabel("Neutron Energy (eV)")
+    plt.ylabel("Cross Section (cm$^{-1}$)")
+    plt.semilogx(E_midpts,sig_t,label=r"$\sigma_t$")
+    plt.semilogx(E_midpts,sig_a,label=r"$\sigma_a$")
+    plt.semilogx(E_midpts,sig_s,label=r"$\sigma_s$")
+    plt.semilogx(E_midpts,sig_f,label=r"$\sigma_f$")
+    plt.semilogx(E_midpts,nu_sig_f,label=r"$\nu \sigma_f$")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('/Users/zachhardy/Desktop/withSaB.png')
+    plt.show()
+
