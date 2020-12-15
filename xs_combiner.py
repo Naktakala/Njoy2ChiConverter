@@ -10,6 +10,7 @@ from os.path import isfile
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.lib.arraysetops import isin
 
 import njoy_converter.Utils_ReadNJOYOutput as Utils_ReadNJOYOutput
 import njoy_converter.Utils_Combiner as Utils_Combiner
@@ -47,18 +48,18 @@ def ParseGroupStructure(val, xs):
       sys.exit(0)
 
 ############################################################
-if __name__ == "__main__":
+def CombineXS(isotopes, grp_struct, temperature):
+  assert isinstance(isotopes, list), "'isotopes' must be a list."
+  assert all([isinstance(iso, tuple) for iso in isotopes]), \
+    "All entries of isotopes must be a tuple."
+  assert all([len(iso)==3 for iso in isotopes]), \
+    "All entries of isotopes must be a tuple of length 3."
+  assert isinstance(grp_struct, str), "'grp_struct' must be a string."
+  assert isinstance(temperature, str), "'temperature' must be a string."
 
-  # isotopes = [('U235','',0.001078), ('U238','',0.004259), 
-  #             ('Zrnat','ZrH',0.031854), ('H1','ZrH',0.050966)]
-  isotopes = [('U235','',0.01), ('U238','',0.01)]
   root = 'njoy_xs'
-  grp_struct = 'lanl30g'
-  temperature = 'room'
-  plot_xs = False
-  
   xs_dir = os.path.join(root, grp_struct, temperature)
-  assert os.path.isdir(xs_dir), "Invalid directory."
+  assert os.path.isdir(xs_dir), "Invalid directory path."
 
   #===== Get the cross sections
   data = []
@@ -67,6 +68,7 @@ if __name__ == "__main__":
     filepath = os.path.join(xs_dir, isomol+'.njoy')
     assert os.path.isfile(filepath), "Invalid filepath."
 
+    #===== Parse NJOY files
     raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(filepath)
     data_ = Utils_Combiner.BuildCombinedData(raw_njoy_data)
     data += [data_]
@@ -76,7 +78,7 @@ if __name__ == "__main__":
   for i in range(len(data)):
     if np.sum(data[i]['sigma_f']) > 0.0:
       Nf += isotopes[i][-1]
-  
+
   #===== Combine data
   xs = {}
   for i in range(len(data)):
@@ -101,7 +103,7 @@ if __name__ == "__main__":
       xs['sigma_s'] = np.zeros(xs['G'])
     xs['sigma_s'] += density * np.array(data[i]['sigma_s'])
 
-    #===== Parse fission cross section
+    #===== Parse prompt fission quantities
     if 'sigma_f' not in xs:
       xs['sigma_f'] = np.zeros(xs['G'])
       xs['nu_sigma_f'] = np.zeros(xs['G'])
@@ -116,7 +118,18 @@ if __name__ == "__main__":
     if 'transfer_matrices' not in xs:
       xs['transfer_matrices'] = np.zeros(tr_mat.shape)
     xs['transfer_matrices'] += density * tr_mat
+  return xs
 
+
+############################################################
+if __name__ == "__main__":
+
+  isotopes = [('U235','',0.01), ('U238','',0.01)]
+  grp_struct = 'xmas172g'
+  temperature = 'room'
+  plot_xs = False
+  
+  xs = CombineXS(isotopes, grp_struct, temperature)
   Utils_Info.ComputeKinf(xs)
 
   if plot_xs:
