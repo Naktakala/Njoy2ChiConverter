@@ -6,6 +6,8 @@ chi_xs
 *tape*
 *runNJOY*
 *.log
+*__pycache__
+archive
 
 
 njoy_automate2/NJOY_INPUT.txt
