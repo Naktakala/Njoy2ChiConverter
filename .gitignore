@@ -9,6 +9,8 @@ chi_xs
 *__pycache__
 archive
 
+.idea/
+
 
 njoy_automate2/NJOY_INPUT.txt
 njoy_automate2/output
