@@ -87,7 +87,7 @@ output_directory="../output/ENDF-B-VII-1/xmas172/"
 output_file_prefix="U235"
 
 #================================= Run NJOY
-cd njoy_automate2
+cd njoy_runner || exit
 
 python generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
@@ -96,22 +96,22 @@ python generate_njoy_mgxs.py \
 --output_directory=$output_directory \
 --output_filename=$output_file_prefix.njoy
 
-cd $CWD
+cd "$CWD" || exit
 
 #================================= Run converter
-cd njoy_converter2
+cd njoy_processor || exit
 
-python njoy_converter2.py \
+python njoy_processor.py \
 --path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
 --output_file_path=$output_directory/$output_file_prefix.csx
 
-cd $CWD
+cd "$CWD" || exit
 ```
 
 ## FAQs:
 
 ### FAQ-1: General format of input examples
-The two python scripts are `generate_njoy_mgxs.py` and `njoy_converter2.py`.
+The two python scripts are `generate_njoy_mgxs.py` and `njoy_processor.py`.
 
 The `generate_njoy_mgxs.py` script basically runs NJOY and has the following inputs (most of which are optional):
 ```
@@ -134,11 +134,11 @@ The `generate_njoy_mgxs.py` script basically runs NJOY and has the following inp
 # --custom_gamma_wt_file="" \
 ```
 
-The `njoy_converter2.py` script converts NJOY output to Chi-cross-section format. It only has two required inputs:
+The `njoy_processor.py` script converts NJOY output to Chi-cross-section format. It only has two required inputs:
 ```
-cd njoy_converter2
+cd njoy_processor
 
-python njoy_converter2.py \
+python njoy_processor.py \
 --path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
 --output_file_path=$output_directory/$output_file_prefix.csx 
 ```
