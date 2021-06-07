@@ -1,9 +1,0 @@
-# Number of groups
-5/
-# Group boundaries
-1.0000e-05
-2.7953e+06
-5.5907e+06
-8.4093e+06
-1.1205e+07
-1.4000e+07/

@@ -4,8 +4,8 @@
  *   $$$  $$       $$  $$$$$$$   $$  $$    *  nuclear     *  vday: 05Aug20   *
  *   $$$$ $$       $$  $$   $$    $$$$     *  data        *  site: lanl t2   *
  *   $$ $$$$  $$   $$  $$   $$     $$      *  processing  *  mach:           *
- *   $$  $$$  $$$$$$$  $$$$$$$     $$      *  system      *  date: 06/04/21  *
- *   $$   $$   $$$$$    $$$$$      $$      *              *  time: 13:30:10  *
+ *   $$  $$$  $$$$$$$  $$$$$$$     $$      *  system      *  date: 06/07/21  *
+ *   $$   $$   $$$$$    $$$$$      $$      *              *  time: 11:11:10  *
  *                                         *              *                  *
  *****************************************************************************
 
@@ -109,7 +109,7 @@
  - reset to    6.50000E+06 eV.
 
  final maximum energy for broadening/thinning =    4.81204E+06 eV
-                                                                          0.1s
+                                                                          0.0s
 
  broadened mat 600 from  0.0000E+00 to  2.9600E+02 k
          points in=   1545  points out=   1371
@@ -1527,7 +1527,7 @@
    171    2.92843+6
    172    3.90716+6
  
- group constants at t=2.960E+02 deg k                                     3.3s
+ group constants at t=2.960E+02 deg k                                     3.4s
  for mf  3 and mt259 inverse velocity                                            
  
  enrgy  group constants at
@@ -1706,7 +1706,7 @@
    171    1.84271-8
    172    1.69278-8
  
- group constants at t=2.960E+02 deg k                                     3.3s
+ group constants at t=2.960E+02 deg k                                     3.4s
  for mf  3 and mt221 free-gas therm scat                                         
  
  enrgy  group constants at
@@ -1794,7 +1794,7 @@
     80    4.74056+0
     81    4.74042+0
  
- group constants at t=2.960E+02 deg k                                     3.3s
+ group constants at t=2.960E+02 deg k                                     3.4s
  for mf  6 and mt  2 (n,elastic) neutron matrix                                  
  
  initl  final  group constants vs legendre order
@@ -2760,7 +2760,7 @@
    172    171   2.71068-1  1.60133-1  4.82383-2  2.51317-3 -2.46111-3 -5.76767-3 -1.52327-2 -2.12313-2
    172    172   5.96099-1  5.40345-1  4.44829-1  3.33733-1  2.29075-1  1.43998-1  8.22125-2  4.14868-2
  
- group constants at t=2.960E+02 deg k                                     3.4s
+ group constants at t=2.960E+02 deg k                                     3.5s
  for mf  6 and mt 28 (n,np) neutron matrix                                       
  
  initl  final  isotropic matrix vs final group
@@ -2786,7 +2786,7 @@
    172    156   2.94756-4  1.56819-4  4.02249-5  2.26250-5  1.57324-5  1.76471-6
    172    162   1.9834-10
  
- group constants at t=2.960E+02 deg k                                     3.4s
+ group constants at t=2.960E+02 deg k                                     3.5s
  for mf  6 and mt 51 (n,n01) neutron matrix                                      
  
  initl  final  group constants vs legendre order
@@ -2921,7 +2921,7 @@
    172    170   1.38564-2  1.24381-2  9.97349-3  7.06440-3  4.32521-3  2.18902-3  8.14735-4  1.15442-4
    172    171   6.40409-4  6.22925-4  5.89065-4  5.40952-4  4.81539-4  4.14365-4  3.43260-4  2.72045-4
  
- group constants at t=2.960E+02 deg k                                     3.5s
+ group constants at t=2.960E+02 deg k                                     3.6s
  for mf  6 and mt 52 (n,n02) neutron matrix                                      
               lr 23 particle emission
  
@@ -3018,7 +3018,7 @@
    172    168   1.95402-3  1.75762-3  1.44476-3  1.11557-3  8.27732-4  5.84534-4  3.71040-4  1.90342-4
    172    169   7.22974-5  7.01051-5  6.58811-5  5.99298-5  5.26695-5  4.45906-5  3.62094-5  2.80199-5
  
- group constants at t=2.960E+02 deg k                                     3.6s
+ group constants at t=2.960E+02 deg k                                     3.7s
  for mf  6 and mt 53 (n,n03) neutron matrix                                      
               lr 23 particle emission
  
@@ -3279,7 +3279,7 @@
    172    165   1.05259-3  7.82293-4  3.98212-4  9.26334-5 -3.91343-5 -3.42110-5  8.84017-6  2.33152-5
    172    166   3.81973-4  3.30574-4  2.43894-4  1.47307-4  6.51612-5  1.20578-5 -1.05202-5 -1.14519-5
  
- group constants at t=2.960E+02 deg k                                     3.8s
+ group constants at t=2.960E+02 deg k                                     3.9s
  for mf  6 and mt 56 (n,n06) neutron matrix                                      
               lr 23 particle emission
  
@@ -3545,7 +3545,7 @@
    172    162   1.33758-3  9.28578-4  3.89684-4  2.47425-5 -7.46290-5 -2.67098-5  1.95814-5  1.70537-5
    172    163   2.62400-4  2.30059-4  1.74543-4  1.10685-4  5.35454-5  1.34088-5 -6.77326-6 -1.07574-5
  
- group constants at t=2.960E+02 deg k                                     4.0s
+ group constants at t=2.960E+02 deg k                                     4.1s
  for mf  6 and mt 59 (n,n09) neutron matrix                                      
               lr 23 particle emission
  
@@ -3684,7 +3684,7 @@
    172    159   5.65680-4  4.44438-4  2.55984-4  7.75466-5 -3.20385-5 -5.87602-5 -3.06507-5  8.05957-6
    172    160   4.25995-4  3.78611-4  2.95889-4  1.97800-4  1.05667-4  3.56773-5 -5.12738-6 -1.91943-5
  
- group constants at t=2.960E+02 deg k                                     4.1s
+ group constants at t=2.960E+02 deg k                                     4.2s
  for mf  6 and mt 61 (n,n11) neutron matrix                                      
               lr 23 particle emission
  
@@ -3742,7 +3742,7 @@
    172    156   2.03847-4  1.79351-4  1.36838-4  8.69831-5  4.10316-5  7.28727-6 -1.09747-5 -1.55361-5
    172    157   1.22397-5  1.19208-5  1.13017-5  1.04186-5  9.32183-6  8.07255-6  6.73780-6  5.38563-6
  
- group constants at t=2.960E+02 deg k                                     4.2s
+ group constants at t=2.960E+02 deg k                                     4.3s
  for mf  6 and mt 62 (n,n12) neutron matrix                                      
               lr 23 particle emission
  
@@ -3763,7 +3763,7 @@
    172    143   3.34010-7  3.27477-7  3.14629-7  2.95893-7  2.71889-7  2.43405-7  2.11360-7  1.76779-7
    172    144   9.27424-8  9.24193-8  9.17748-8  9.08140-8  8.95433-8  8.79718-8  8.61097-8  8.39708-8
  
- group constants at t=2.960E+02 deg k                                     4.2s
+ group constants at t=2.960E+02 deg k                                     4.3s
  for mf  6 and mt 91 (n,nc) neutron matrix                                       
               lr 23 particle emission
  
@@ -3891,7 +3891,7 @@
 
  threshold is above highest energy bound for mt  5
  
- group constants at t=2.960E+02 deg k                                     5.5s
+ group constants at t=2.960E+02 deg k                                     5.6s
  for mf  6 and mt221 free-gas matrix                                             
  
  initl  final  group constants vs legendre order
@@ -8038,7 +8038,7 @@
     81     81   3.42766-1  2.97676-1  2.25111-1  1.49649-1  8.96502-2  5.07002-2  2.84112-2  1.58412-2
     81     82   2.22942-2  1.91610-2  1.41288-2  8.91366-3  4.78963-3  2.13791-3  6.49681-4 -1.57626-4
  
- group constants at t=2.960E+02 deg k                                     7.9s
+ group constants at t=2.960E+02 deg k                                     8.0s
  for mf  6 and mt229 inelastic_s(a,b) matrix                                     
  
  initl  final  group constants vs legendre order

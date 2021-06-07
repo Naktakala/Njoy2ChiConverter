@@ -16,7 +16,7 @@ chiVolumeMesherSetProperty(MATID_FROMLOGICAL,vol0,0)
 
 --########################################## Cross-section
 xs_grph = chiPhysicsTransportXSCreate()
-chiPhysicsTransportXSSet(xs_grph,CHI_XSFILE,"../../output/ENDF-B-VII-1/xmas172/Cnat_graphite.csx")
+chiPhysicsTransportXSSet(xs_grph,CHI_XSFILE,"../../output/ENDF-B-VII-1/xmas172/Cnat_graphite.cxs")
 xs = chiPhysicsTransportXSGet(xs_grph)
 num_groups = xs["G"]
 for k,v in pairs(xs) do 
@@ -99,7 +99,7 @@ chiLBSGroupsetSetGMRESRestartIntvl(phys1,cur_gs,30)
 chiLBSGroupsetSetWGDSA(phys1,cur_gs,30,1.0e-4,false," ")
 chiLBSGroupsetSetTGDSA(phys1,cur_gs,30,1.0e-4,false," ")
 --
-chiLBSSetProperty(phys1,DISCRETIZATION_METHOD,PWLD3D)
+chiLBSSetProperty(phys1,DISCRETIZATION_METHOD,PWLD)
 chiLBSSetProperty(phys1,SCATTERING_ORDER,7)
 --
 chiLBSInitialize(phys1)
@@ -121,6 +121,9 @@ for g=1,num_groups do
   chiFFInterpolationSetProperty(curffi,LOGICAL_VOLUME,vol0)
   chiFFInterpolationInitialize(curffi)
   chiFFInterpolationExecute(curffi)
-  print(g-1,chiFFInterpolationGetValue(curffi))
+
+  grp_str = string.format("%.6d   ",g-1)
+  val_str = tostring(chiFFInterpolationGetValue(curffi))
+  print(grp_str..val_str)
 end
 
