@@ -4,8 +4,12 @@
 #
 CWD=$PWD
 
+if [[ -z "${ENDF_ROOT}" ]]; then
+  echo "ENDF_ROOT not set. Please set or specify custom paths."
+  exit
+fi
+
 #================================= Set properties here
-export ENDF_ROOT=/Users/janv4/Desktop/Projects/ENDF/ENDF-B-VII.1
 neutron_file="n-008_O_016.endf"
 gamma_file="photoat-008_O_000.endf"
 # sab_file="tsl-graphite.endf"
@@ -14,7 +18,7 @@ output_directory="../output/ENDF-B-VII-1/xmas172lanl48/"
 output_file_prefix="O16"
 
 #================================= Run NJOY
-cd njoy_automate2
+cd njoy_runner || exit
 
 python generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
@@ -45,14 +49,14 @@ python generate_njoy_mgxs.py \
 # --custom_neutron_wt_file="" \
 # --custom_gamma_wt_file="" \
 
-cd $CWD
+cd "$CWD" || exit
 
 #================================= Run converter
-cd njoy_converter2
+cd njoy_processor || exit
 
-python njoy_converter2.py \
+python njoy_processor.py \
 --path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
 --output_file_path=$output_directory/$output_file_prefix.csx 
 # --plot
 
-cd $CWD
+cd "$CWD" || exit
