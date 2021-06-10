@@ -10,11 +10,18 @@ Prepares NJOY inputs and converts NJOY output to Chi-Tech Multigroup Transport c
 - Older versions. Go to Brookhaven National Laboratory's site and download what you need. [National Nuclear Data Center](https://www.nndc.bnl.gov/exfor/endf00.jsp)
 
 Extract this library in a folder of your choice which we shall just call `ENDF_FOLDER`.
-  * on Linux machines, you can do this using: 
-  ```shell 
+
+
+For example, on Linux machines, you can do this using: 
+- ```shell 
   curl -O https://www.nndc.bnl.gov/endf/b8.0/zips/ENDF-B-VIII.0.zip
   ```
-  and unzip using the ```unzip``` command
+- unzip using the ```unzip``` command
+- set the envrionement variable `ENDF_ROOT` to point to `ENDF_FOLDER`. In bash, this is
+  ```shell
+  export ENDF_ROOT=<path-to-ENDF_FOLDER>
+  ```
+  **Note:** this is the absolute path.
   
 ### Step 2: Download and install NJOY2016
 
@@ -159,7 +166,7 @@ The moment you supply the option `--path_to_gamma_endf` then the script will kno
 ### FAQ-4: Format of a custom weighting spectrum file
 The file is in ENDF TAB1-record format which can be confusing. An example spectrum file is supplied in `njoy_automate2/spectrum_file.txt` and is the same for custom neutron AND gamma spectrums.
 
-Note: remember the `/` terminator and the blank line at the end of the file.
+**Note:** remember the `/` terminator and the blank line at the end of the file.
 
 ### FAQ-5: Format of a custom group structure file
 The first line of a group structure file is the total number of groups `G`. Then followed by the lowest energy cutoff then a total of `G` upper bin boundaries (all in eV):
