@@ -3,6 +3,10 @@ Prepares NJOY inputs and converts NJOY output to Chi-Tech Multigroup Transport c
 
 ## How to use this converter
 
+### Step-0: Python requirements
+
+Runs with python3.
+
 ### Step 1: Download and setup your flavor of ENDF
 
 - The entire ENDF8.0 library (Preferred) [ENDFVIII.0](https://www.nndc.bnl.gov/endf/b8.0/zips/ENDF-B-VIII.0.zip) (~500Mb on download, ~2Gb extracted)
@@ -10,7 +14,6 @@ Prepares NJOY inputs and converts NJOY output to Chi-Tech Multigroup Transport c
 - Older versions. Go to Brookhaven National Laboratory's site and download what you need. [National Nuclear Data Center](https://www.nndc.bnl.gov/exfor/endf00.jsp)
 
 Extract this library in a folder of your choice which we shall just call `ENDF_FOLDER`.
-
 
 For example, on Linux machines, you can do this using: 
 - ```shell 
