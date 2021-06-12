@@ -3,6 +3,10 @@ Prepares NJOY inputs and converts NJOY output to Chi-Tech Multigroup Transport c
 
 ## How to use this converter
 
+### Step-0: Python requirements
+
+Runs with python3.
+
 ### Step 1: Download and setup your flavor of ENDF
 
 - The entire ENDF8.0 library (Preferred) [ENDFVIII.0](https://www.nndc.bnl.gov/endf/b8.0/zips/ENDF-B-VIII.0.zip) (~500Mb on download, ~2Gb extracted)
@@ -11,6 +15,17 @@ Prepares NJOY inputs and converts NJOY output to Chi-Tech Multigroup Transport c
 
 Extract this library in a folder of your choice which we shall just call `ENDF_FOLDER`.
 
+For example, on Linux machines, you can do this using: 
+- ```shell 
+  curl -O https://www.nndc.bnl.gov/endf/b8.0/zips/ENDF-B-VIII.0.zip
+  ```
+- unzip using the ```unzip``` command
+- set the envrionement variable `ENDF_ROOT` to point to `ENDF_FOLDER`. In bash, this is
+  ```shell
+  export ENDF_ROOT=<path-to-ENDF_FOLDER>
+  ```
+  **Note:** this is the absolute path.
+  
 ### Step 2: Download and install NJOY2016
 
 This converter processes only NJOY2016 output files for now so please stick to this version. The project is hosted on GitHub at [https://github.com/njoy/NJOY2016](https://github.com/njoy/NJOY2016), which has a link for installation instructions. However, the installation instructions are for NJOY2021 and therefore we give a short summary of the equivalent instructions for NJOY2016.
@@ -148,13 +163,13 @@ Simply run `generate_njoy_mgxs.py` with `--inelastic_thermal_number=` and `--ine
 
 There aren't a lot of materials that have S(a,b) inelastic treatment so it is worth doing some homework on them and verifying a semi-infinite medium spectrum like done in the `tests` folder.
 
-### FAQ-3: How to produce neutron-gamma cross-sections?
+### FAQ-3: How to produce neutron-gamma cross sections?
 The moment you supply the option `--path_to_gamma_endf` then the script will know to run with gamma production and make `--gamma_group_structure` required.
 
 ### FAQ-4: Format of a custom weighting spectrum file
 The file is in ENDF TAB1-record format which can be confusing. An example spectrum file is supplied in `njoy_automate2/spectrum_file.txt` and is the same for custom neutron AND gamma spectrums.
 
-Note: remember the `/` terminator and the blank line at the end of the file.
+**Note:** remember the `/` terminator and the blank line at the end of the file.
 
 ### FAQ-5: Format of a custom group structure file
 The first line of a group structure file is the total number of groups `G`. Then followed by the lowest energy cutoff then a total of `G` upper bin boundaries (all in eV):
@@ -173,4 +188,4 @@ The first line of a group structure file is the total number of groups `G`. Then
 
 ```
 
-Note: remember the `/` terminator and the blank line at the end of the file.
+**Note:** remember the `/` terminator and the blank line at the end of the file.
