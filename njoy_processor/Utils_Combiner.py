@@ -179,7 +179,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         rx_name = "(n,{:01d}n)".format(nn)
         n_to_n_nxn_keys.append(rx_name)
     # Freegas thermal scattering
-    n_to_n_freegas_keys = ["mt221"]
+    n_to_n_freegas_keys = ["free-gas"]
     # S(alpha,beta) thermal scattering keys
     n_to_n_sab_inel_keys = ["mt222", "mt229",
                             "mt225", "mt235"]
@@ -187,67 +187,68 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     # Neutron to gamma reactions
     n_to_g_transfer_keys = ["(n,g)", "(n,inel)", "(n,np)",
                             "(n,nd)", "(n,p)", "(n,d)",
-                            "(n,t)", "(n,a)"]
+                            "(n,t)", "(n,a)", 
+                            "(n,na)", "(n,n2a)", "(n,n3a)", "(n,nc)"]
     # Gamma to gamma reactions
-    g_to_g_transfer_keys = ["(g,coherent)", "(g,incoherent)",
-                            "(g,pair_production)"]
+    g_to_g_transfer_keys = ["(coherent)", "(incoherent)",
+                            "(pair_production)"]
 
     # ================================= Get the transfer matrices
     # Adding all the elastic scattering data
     nranges_to_nranges_el = []
     for rxn in n_to_n_el_keys:
-        if rxn in transfer_matrices:
-            mat = transfer_matrices[rxn]
+        if rxn in transfer_matrices['neutron']:
+            mat = transfer_matrices['neutron'][rxn]
             nranges_to_nranges_el.append(mat)
 
     # Adding all the inelastic data
     nranges_to_nranges_inel = []
     for rxn in n_to_n_inel_keys:
-        if rxn in transfer_matrices:
-            mat = transfer_matrices[rxn]
+        if rxn in transfer_matrices['neutron']:
+            mat = transfer_matrices['neutron'][rxn]
             nranges_to_nranges_inel.append(mat)
 
     # Adding all the (n,xn) data
     nranges_to_nranges_nxn = []
     for rxn in n_to_n_nxn_keys:
-        if rxn in transfer_matrices:
-            mat = transfer_matrices[rxn]
+        if rxn in transfer_matrices['neutron']:
+            mat = transfer_matrices['neutron'][rxn]
             nranges_to_nranges_nxn.append(mat)
 
     # Adding all the free gas elastic scattering data
     nranges_to_nranges_freegas = []
     for rxn in n_to_n_freegas_keys:
-        if rxn in transfer_matrices:
-            mat = transfer_matrices[rxn]
+        if rxn in transfer_matrices['neutron']:
+            mat = transfer_matrices['neutron'][rxn]
             nranges_to_nranges_freegas.append(mat)
 
     # Adding all the elastic scattering S(\alpha,\beta) data
     nranges_to_nranges_sab_el = []
     for rxn in n_to_n_sab_el_keys:
-        if rxn in transfer_matrices:
-            mat = transfer_matrices[rxn]
+        if rxn in transfer_matrices['neutron']:
+            mat = transfer_matrices['neutron'][rxn]
             nranges_to_nranges_sab_el.append(mat)
             with_sab = True
 
     # Adding all the inelastic scattering S(\alpha,\beta) data
     nranges_to_nranges_sab_inel = []
     for rxn in n_to_n_sab_inel_keys:
-        if rxn in transfer_matrices:
-            mat = transfer_matrices[rxn]
+        if rxn in transfer_matrices['neutron']:
+            mat = transfer_matrices['neutron'][rxn]
             nranges_to_nranges_sab_inel.append(mat)
             with_sab = True
 
     # Adding all the neutron to gamma data
     nranges_to_granges = []
     for rxn in n_to_g_transfer_keys:
-        if rxn in transfer_matrices:
-            nranges_to_granges.append(transfer_matrices[rxn])
+        if rxn in transfer_matrices['gamma']:
+            nranges_to_granges.append(transfer_matrices['gamma'][rxn])
 
     # Adding all the gamma to gamma data
     granges_to_granges = []
     for rxn in g_to_g_transfer_keys:
-        if rxn in transfer_matrices:
-            granges_to_granges.append(transfer_matrices[rxn])
+        if rxn in transfer_matrices['gamma']:
+            granges_to_granges.append(transfer_matrices['gamma'][rxn])
 
     # ===== Computing the max number of moments
     max_num_moms = 0
@@ -386,12 +387,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                         transfer_mats[m][gprime, :] = mat[gprime, :]
                         break  # from for g
 
-    # Compute new sigma_t, sigma_a, sigma_s
-    sig_a = sig_t - sig_el - sig_inel
-    sig_s = np.sum(transfer_mats[0], axis = 1)
-    sig_sab = sig_el_sab + sig_inel_sab
-    sig_t = sig_a + sig_s
-
     # Regular n,\gamma transfer <- add to above
     for range_data in nranges_to_granges:
         AddTransferNeutron(range_data, offset = G_g)
@@ -399,6 +394,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     # Regular \gamma,\gamma transfer <- add to above
     for range_data in granges_to_granges:
         AddTransferGamma(range_data)
+        
+    # Compute new sigma_t, sigma_a, sigma_s 
+    ### This is to correct the total due to across-particule-type transfers
+    sig_a = sig_t - sig_el - sig_inel
+    sig_s = np.sum(transfer_mats[0], axis = 1)
+    sig_t = sig_a + sig_s
+    #
+    sig_sab = sig_el_sab + sig_inel_sab
 
     # ===== Print outs
     if verbose:

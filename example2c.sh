@@ -1,8 +1,7 @@
 #
-# Simple cross-section for graphite using a custom neutron
-# group structure
-# FIX ME
-
+# Simple cross-section for O16 using mostly defaults and 
+# the lanl-187 neutron group structure and the gamma lanl-48 group structure
+#
 CWD=$PWD
 
 if [[ -z "${ENDF_ROOT}" ]]; then
@@ -11,26 +10,28 @@ if [[ -z "${ENDF_ROOT}" ]]; then
 fi
 
 #================================= Set properties here
-neutron_file="n-006_C_000.endf"
-sab_file="tsl-graphite.endf"
+neutron_file="n-008_O_016.endf"
+gamma_file="photoat-008_O_000.endf"
+# sab_file="tsl-graphite.endf"
 
-output_directory="../output/ENDF-B-VII-1/custom6/"
-output_file_prefix="Cnat_graphite"
+output_directory="../output/ENDF-B-VII-1/LANL187_LANL48/"
+output_file_prefix="O16_n187g48"
 
 #================================= Run NJOY
 cd njoy_runner || exit
 
 python3 generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
---path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \
---inelastic_thermal_number=229 \
---inelastic_thermal_num_atoms=1 \
---elastic_thermal_number=230 \
---temperature=296.0 \
---neutron_group_structure=1 \
---custom_neutron_gs_file=$output_directory/group_structure.txt \
+--path_to_gamma_endf=$ENDF_ROOT/photoat/$gamma_file \
+--temperature=293.6 \
+--neutron_group_structure=10 \
+--neutron_weight_function=11 \
+--gamma_group_structure=6 \
+--gamma_weight_function=3 \
 --output_directory=$output_directory \
 --output_filename=$output_file_prefix.njoy
+
+### --custom_neutron_wt_file=$output_directory/spectrum_file.txt \
 
 # --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 # --path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \
