@@ -22,3 +22,6 @@ njoy_converter2/output.cxs
 
 njoy_runner/output
 njoy_runner/NJOY_INPUT.txt
+
+*.csx
+*.njoy
