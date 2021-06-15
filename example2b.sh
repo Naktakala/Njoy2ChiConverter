@@ -14,7 +14,7 @@ neutron_file="n-008_O_016.endf"
 gamma_file="photoat-008_O_000.endf"
 # sab_file="tsl-graphite.endf"
 
-output_directory="../output/ENDF-B-VII-1/xmas172lanl48/"
+output_directory="../output/ENDF-B-VII-1/xmas172/"
 output_file_prefix="O16"
 
 #================================= Run NJOY
