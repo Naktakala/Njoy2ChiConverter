@@ -55,6 +55,6 @@ python3 njoy_processor.py \
 --output_path=$output_directory \
 --njoy_output_filename=$output_file_prefix.njoy \
 --chixs_filename=$output_file_prefix.csx \
-## --plot
+--plot
 
 cd "$CWD" || exit
