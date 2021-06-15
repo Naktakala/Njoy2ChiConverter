@@ -15,12 +15,13 @@ gamma_file="photoat-008_O_000.endf"
 # sab_file="tsl-graphite.endf"
 
 output_directory="../output/ENDF-B-VII-1/LANL30_LANL12/"
-output_file_prefix="O16_n30g12"
+output_file_prefix="O16_n30g12_njoy2021"
 
 #================================= Run NJOY
 cd njoy_runner || exit
 
 python3 generate_njoy_mgxs.py \
+--njoy_exec_name=njoy \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 --path_to_gamma_endf=$ENDF_ROOT/photoat/$gamma_file \
 --temperature=293.6 \

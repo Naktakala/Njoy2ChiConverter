@@ -106,6 +106,9 @@ See spectrum_file.txt
    
 ''')
 
+argparser.add_argument("--njoy_exec_name",
+                       help="Name of the NJOY executable",
+                       default="njoy")                                              
 argparser.add_argument("--path_to_neutron_endf",
                        help="Path to the isotope's endf file for "
                        "incident neutrons",
@@ -162,7 +165,6 @@ argparser.add_argument("--gamma_weight_function",
                        choices=giwt,
                        type=int,
                        default=2)    
-
 argparser.add_argument("--custom_neutron_gs_file",
                        help="Custom neutron group structure file path.",
                        default="")    
@@ -531,7 +533,8 @@ njoy_input.close()
 
 
 # ===================================== Run NJOY
-os.system("njoy < NJOY_INPUT.txt")
+cmd_line = args.njoy_exec_name + " < NJOY_INPUT.txt"
+os.system(cmd_line)
 os.system("rm tape*")
 
 if not os.path.isdir(args.output_directory):
