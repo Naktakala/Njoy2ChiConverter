@@ -342,7 +342,7 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
                     ProcessCrossSection(nL, file_lines)
 
             if words[2] == "3" and words[4] == "mt221":
-                cross_sections["free_gas_therm_scat"] = \
+                cross_sections["free_gas"] = \
                     ProcessCrossSection(nL, file_lines)
 
             if words[2] == "3" and words[4] == "mt452":
@@ -372,15 +372,15 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
             # caveat: the pp values from transfer(mf26) = 2x the pp from the xsec(mf23)
             # caveat: the n,2n values from transfer(mf8/mt16) = 2x the n,2n from the xsec(mf3/mt16)
             if words[num_words - 1] == "matrix":
-                particule_type = words[num_words - 2]
+                particle_type = words[num_words - 2]
                 reaction_type  = words[num_words - 3]
-                if particule_type=="free-gas":
-                    particule_type = "neutron"
-                if particule_type=="inelastic_s(a,b)":
-                    particule_type = "neutron"
-                if particule_type=="elastic_s(a,b)":
-                    particule_type = "neutron"
-                transfer_matrices[particule_type][reaction_type] = \
+                if particle_type=="free-gas":
+                    particle_type = "neutron"
+                if particle_type=="inelastic_s(a,b)":
+                    particle_type = "neutron"
+                if particle_type=="elastic_s(a,b)":
+                    particle_type = "neutron"
+                transfer_matrices[particle_type][reaction_type] = \
                     ProcessTransferMatrix(nL, file_lines)
 
 ###---------MF 23 -------------------------------------------------------------

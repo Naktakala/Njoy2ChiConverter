@@ -11,7 +11,8 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     group_structures = raw_njoy_data["group_structures"]
     cross_sections = raw_njoy_data["cross_sections"]
     transfer_matrices = raw_njoy_data["transfer_matrices"]
-
+    print(cross_sections.keys())
+    
     # ================================= Determine # of groups
     neutn_gs = group_structures["neutron"]
     gamma_gs = group_structures["gamma"] if "gamma" in group_structures else []
@@ -58,7 +59,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
 
     sig_freegas = np.zeros(G)
     if "free_gas" in cross_sections:
-        data = cross_sections["free_gas_therm_scat"]
+        data = cross_sections["free_gas"]
         for entry in data:
             g = entry[0]
             v = entry[1]
