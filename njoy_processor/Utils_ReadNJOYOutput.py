@@ -374,9 +374,12 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
             if words[num_words - 1] == "matrix":
                 particule_type = words[num_words - 2]
                 reaction_type  = words[num_words - 3]
-                if particule_type=='free-gas':
-                    particule_type = 'neutron'
-                    reaction_type  = 'free-gas'
+                if particule_type=="free-gas":
+                    particule_type = "neutron"
+                if particule_type=="inelastic_s(a,b)":
+                    particule_type = "neutron"
+                if particule_type=="elastic_s(a,b)":
+                    particule_type = "neutron"
                 transfer_matrices[particule_type][reaction_type] = \
                     ProcessTransferMatrix(nL, file_lines)
 
