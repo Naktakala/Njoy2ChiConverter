@@ -1,7 +1,6 @@
 #
 # Simple cross-section for graphite using mostly defaults and 
 # the xmas 172 group structure
-# FIX ME, tape missing
 
 CWD=$PWD
 
