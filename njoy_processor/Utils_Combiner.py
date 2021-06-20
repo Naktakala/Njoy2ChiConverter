@@ -189,10 +189,11 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     n_to_n_other_keys = ["(n,np)", "(n,nd)", "(n,na)",
                          "(n,n2a)", "(n,n3a)"]
     # Neutron to gamma reactions
-    n_to_g_transfer_keys = ["(n,g)", "(n,inel)", "(n,np)",
-                            "(n,nd)", "(n,p)", "(n,d)",
-                            "(n,t)", "(n,a)", 
-                            "(n,na)", "(n,n2a)", "(n,n3a)"]
+    n_to_g_transfer_keys = ["(n,g)", "(n,inel)",
+                            "(n,np)", "(n,nd)",
+                            "(n,p)", "(n,d)", "(n,t)", "(n,a)", "(n,2a)",  
+                            "(n,na)", "(n,n2a)", "(n,n3a)",
+                            "(n,nc)"]
     # Gamma to gamma reactions
     g_to_g_transfer_keys = ["(coherent)", "(incoherent)",
                             "(pair_production)"]
