@@ -52,7 +52,11 @@ def ProcessCrossSection(nL_i, lines, header_size = 5, line_incr = 1, weighting_s
         A table containing the group wise xs. """
     xs = []
     # Skip header
-    nL = nL_i + header_size
+    add_skip = 0
+    if lines[nL_i + 1].find("particle emission") >= 0:
+        add_skip = 1
+
+    nL = nL_i + header_size + add_skip
     words = lines[nL].split()
     num_words = len(words)
 
