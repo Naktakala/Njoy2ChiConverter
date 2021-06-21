@@ -380,7 +380,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         transfer_mats[m] += transfer_el[m]
         transfer_mats[m] += transfer_inel[m]
         transfer_mats[m] += transfer_nxn[m]
-#        transfer_mats[m] += transfer_n_other[m]
+        transfer_mats[m] += transfer_n_other[m]
 
     # We already have the freegas thermal scattering matrix
     # transfer_freegas
@@ -418,8 +418,8 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     #
     sig_sab = sig_el_sab + sig_inel_sab
 
-    for range_data in nranges_to_nranges_other:
-        AddTransferNeutron(range_data)
+    #for range_data in nranges_to_nranges_other:
+    #    AddTransferNeutron(range_data)
 
     # Regular n,\gamma transfer <- add to above
     for range_data in nranges_to_granges:
