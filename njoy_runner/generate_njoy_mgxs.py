@@ -533,7 +533,15 @@ njoy_input.close()
 
 
 # ===================================== Run NJOY
-cmd_line = args.njoy_exec_name + " < NJOY_INPUT.txt"
+# remove output file
+os.system('rm -f output')
+
+if args.njoy_exec_name == "njoy21":
+    cmd_line = args.njoy_exec_name + " -i NJOY_INPUT.txt -o output"
+else:
+    cmd_line = args.njoy_exec_name  + " < NJOY_INPUT.txt"
+print('command line =',cmd_line)
+
 os.system(cmd_line)
 os.system("rm tape*")
 
