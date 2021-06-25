@@ -11,8 +11,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     group_structures = raw_njoy_data["group_structures"]
     cross_sections = raw_njoy_data["cross_sections"]
     transfer_matrices = raw_njoy_data["transfer_matrices"]
-    print(cross_sections.keys())
-    
+
     # ================================= Determine # of groups
     neutn_gs = group_structures["neutron"]
     gamma_gs = group_structures["gamma"] if "gamma" in group_structures else []
@@ -39,6 +38,25 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_t[G_n + G_g - g - 1] += v
+    
+    #Testing 
+    # ================================= Combine Heating terms
+    sig_heat = np.zeros(G)
+
+    if "(n,heat)" in cross_sections:
+        data = cross_sections["(n,heat)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_heat[G_n - g - 1] += v
+
+    if "(g,heat)" in cross_sections:
+        data = cross_sections["(g,heat)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_heat[G_n + G_g - g - 1] += v
+    #-------------------
 
     # ================================= Scattering terms
     sig_el = np.zeros(G)
@@ -180,20 +198,16 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         rx_name = "(n,{:01d}n)".format(nn)
         n_to_n_nxn_keys.append(rx_name)
     # Freegas thermal scattering
-    n_to_n_freegas_keys = ["mt221"]
+    n_to_n_freegas_keys = ["free-gas"]
     # S(alpha,beta) thermal scattering keys
     n_to_n_sab_inel_keys = ["mt222", "mt229",
                             "mt225", "mt235"]
     n_to_n_sab_el_keys = ["mt230", "mt226", "mt236"]
-    # Neutron to neutron other reactions
-    n_to_n_other_keys = ["(n,np)", "(n,nd)", "(n,na)",
-                         "(n,n2a)", "(n,n3a)"]
     # Neutron to gamma reactions
-    n_to_g_transfer_keys = ["(n,g)", "(n,inel)",
-                            "(n,np)", "(n,nd)",
-                            "(n,p)", "(n,d)", "(n,t)", "(n,a)", "(n,2a)",  
-                            "(n,na)", "(n,n2a)", "(n,n3a)",
-                            "(n,nc)"]
+    n_to_g_transfer_keys = ["(n,g)", "(n,inel)", "(n,np)",
+                            "(n,nd)", "(n,p)", "(n,d)",
+                            "(n,t)", "(n,a)", 
+                            "(n,na)", "(n,n2a)", "(n,n3a)", "(n,nc)"]
     # Gamma to gamma reactions
     g_to_g_transfer_keys = ["(coherent)", "(incoherent)",
                             "(pair_production)"]
@@ -243,13 +257,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             nranges_to_nranges_sab_inel.append(mat)
             with_sab = True
 
-    # Adding all the other neutron to neutron data
-    nranges_to_nranges_other = []
-    for rxn in n_to_n_other_keys:
-        if rxn in transfer_matrices['neutron']:
-            mat = transfer_matrices['neutron'][rxn]
-            nranges_to_nranges_other.append(mat)
-
     # Adding all the neutron to gamma data
     nranges_to_granges = []
     for rxn in n_to_g_transfer_keys:
@@ -277,9 +284,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         if range_data:
             max_num_moms = max(max_num_moms, len(range_data[0]) - 2)
     for range_data in nranges_to_nranges_sab_inel:
-        if range_data:
-            max_num_moms = max(max_num_moms, len(range_data[0]) - 2)
-    for range_data in nranges_to_nranges_other:
         if range_data:
             max_num_moms = max(max_num_moms, len(range_data[0]) - 2)
     for range_data in nranges_to_granges:
@@ -330,7 +334,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     transfer_sab_el = np.copy(transfer_mats)
     transfer_sab_inel = np.copy(transfer_mats)
     transfer_freegas = np.copy(transfer_mats)
-    transfer_n_other = np.copy(transfer_mats)
 
     # Regular elastic scatter (MT-2)
     transfer_mats = [0.0 * mat for mat in transfer_mats]
@@ -368,19 +371,12 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         AddTransferNeutron(range_data)
     transfer_sab_inel = np.copy(transfer_mats)
 
-    # (n,n+other) reactions
-    transfer_mats = [0.0 * mat for mat in transfer_mats]
-    for range_data in nranges_to_nranges_other:
-        AddTransferNeutron(range_data)
-    transfer_n_other = np.copy(transfer_mats)
-
     # Build base transfer matrices from regular scattering processes
     transfer_mats = [0.0 * mat for mat in transfer_mats]
     for m in range(0, max_num_moms):
         transfer_mats[m] += transfer_el[m]
         transfer_mats[m] += transfer_inel[m]
         transfer_mats[m] += transfer_nxn[m]
-        transfer_mats[m] += transfer_n_other[m]
 
     # We already have the freegas thermal scattering matrix
     # transfer_freegas
@@ -410,17 +406,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                         transfer_mats[m][gprime, :] = mat[gprime, :]
                         break  # from for g
 
-    # Compute new sigma_t, sigma_a, sigma_s 
-    ### This is to correct the total due to across-particule-type transfers
-    sig_a = sig_t - sig_el - sig_inel
-    sig_s = np.sum(transfer_mats[0], axis = 1)
-    sig_t = sig_a + sig_s
-    #
-    sig_sab = sig_el_sab + sig_inel_sab
-
-    #for range_data in nranges_to_nranges_other:
-    #    AddTransferNeutron(range_data)
-
     # Regular n,\gamma transfer <- add to above
     for range_data in nranges_to_granges:
         AddTransferNeutron(range_data, offset = G_g)
@@ -429,6 +414,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     for range_data in granges_to_granges:
         AddTransferGamma(range_data)
         
+    # Compute new sigma_t, sigma_a, sigma_s 
+    ### This is to correct the total due to across-particule-type transfers
+    sig_a = sig_t - sig_el - sig_inel
+    sig_s = np.sum(transfer_mats[0], axis = 1)
+    sig_t = sig_a + sig_s
+    #
+    sig_sab = sig_el_sab + sig_inel_sab
+
     # ===== Print outs
     if verbose:
         diff_el = np.sum(sig_el - np.sum(transfer_el[0], axis = 1))
@@ -524,5 +517,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                    "gamma": gamma,
                    "inv_velocity": inv_v,
                    "transfer_matrices": transfer_mats,
-                   "transfer_matrices_sparsity": transfer_mats_nonzeros}
+                   "transfer_matrices_sparsity": transfer_mats_nonzeros,
+                   #Testing
+                   "sigma_heat": sig_heat}
     return return_data
