@@ -39,7 +39,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             v = entry[1]
             sig_t[G_n + G_g - g - 1] += v
     
-    #Testing 
     # ================================= Combine Heating terms
     sig_heat = np.zeros(G)
 
@@ -56,7 +55,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_heat[G_n + G_g - g - 1] += v
-    #-------------------
 
     # ================================= Scattering terms
     sig_el = np.zeros(G)
@@ -518,6 +516,5 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                    "inv_velocity": inv_v,
                    "transfer_matrices": transfer_mats,
                    "transfer_matrices_sparsity": transfer_mats_nonzeros,
-                   #Testing
                    "sigma_heat": sig_heat}
     return return_data

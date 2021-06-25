@@ -40,7 +40,6 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
         cf.write("\n")
     cf.write("SIGMA_T_END" + "\n\n")
     
-    #-------Testing for heating cross-sections
     sig_heat = data["sigma_heat"]
     cf.write("SIGMA_HEAT_BEGIN" + "\n")
     for g in range(0, G):
@@ -48,7 +47,6 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
         cf.write("{:<g}".format(sig_heat[g]))
         cf.write("\n")
     cf.write("SIGMA_HEAT_END" + "\n\n")
-    #----------------------
 
     cf.write("SIGMA_A_BEGIN" + "\n")
     for g in range(0, G):
