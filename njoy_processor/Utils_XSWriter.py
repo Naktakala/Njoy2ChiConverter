@@ -10,6 +10,7 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
     sig_a = data["sigma_a"]
     sig_s = data["sigma_s"]
     sig_f = data["sigma_f"]
+    sig_heat = data["sigma_heat"]
     nu_total = data["nu_total"]
     nu_prompt = data["nu_prompt"]
     nu_delayed = data["nu_delayed"]
@@ -39,7 +40,7 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
         cf.write("{:<g}".format(sig_t[g]))
         cf.write("\n")
     cf.write("SIGMA_T_END" + "\n\n")
-
+    
     cf.write("SIGMA_A_BEGIN" + "\n")
     for g in range(0, G):
         cf.write("{:<4d}".format(g) + " ")
@@ -53,7 +54,22 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
         cf.write("{:<g}".format(sig_s[g]))
         cf.write("\n")
     cf.write("SIGMA_S_END" + "\n\n")
-
+    
+    cf.write("SIGMA_HEAT_BEGIN" + "\n")
+    for g in range(0, G):
+        cf.write("{:<4d}".format(g) + " ")
+        cf.write("{:<g}".format(sig_heat[g]))
+        cf.write("\n")
+    cf.write("SIGMA_HEAT_END" + "\n\n")
+    
+    #Test Start
+    Ratio_sigf = (np.linalg.norm(sig_f) / pow(10,-20))*100
+    cf.write("np.linalg.norm(sig_f) = " + str(Ratio_sigf) + "% of 1e-20")
+    cf.write("\n")
+    
+    
+    #Test End
+    
     if np.linalg.norm(sig_f) > 1.0e-20:
         cf.write("SIGMA_F_BEGIN" + "\n")
         for g in range(0, G):

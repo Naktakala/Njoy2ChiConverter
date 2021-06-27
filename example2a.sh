@@ -21,7 +21,7 @@ output_file_prefix="O16_n30g12_njoy2021"
 cd njoy_runner || exit
 
 python3 generate_njoy_mgxs.py \
---njoy_exec_name=njoy \
+--njoy_exec_name=njoy21 \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 --path_to_gamma_endf=$ENDF_ROOT/photoat/$gamma_file \
 --temperature=293.6 \

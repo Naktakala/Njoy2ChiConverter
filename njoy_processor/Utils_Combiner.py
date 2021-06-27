@@ -39,6 +39,23 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_t[G_n + G_g - g - 1] += v
+    
+    # ================================= Combine Heating Cross-Sections
+    sig_heat = np.zeros(G)
+
+    if "(n,heat)" in cross_sections:
+        data = cross_sections["(n,heat)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_heat[G_n - g - 1] += v
+
+    if "(g,heat)" in cross_sections:
+        data = cross_sections["(g,heat)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_heat[G_n + G_g - g - 1] += v
 
     # ================================= Scattering terms
     sig_el = np.zeros(G)
@@ -515,6 +532,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                    "sigma_s_sab_el": sig_el_sab,
                    "sigma_s_sab_inel": sig_inel_sab,
                    "sigma_f": sig_f,
+                   "sigma_heat": sig_heat,
                    "nu_total": nu_total,
                    "nu_prompt": nu_prompt,
                    "nu_delayed": nu_delayed,
