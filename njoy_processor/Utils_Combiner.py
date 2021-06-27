@@ -48,14 +48,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         for entry in data:
             g = entry[0]
             v = entry[1]
-            sig_t[G_n - g - 1] += v
+            sig_heat[G_n - g - 1] += v
 
     if "(g,heat)" in cross_sections:
         data = cross_sections["(g,heat)"]
         for entry in data:
             g = entry[0]
             v = entry[1]
-            sig_t[G_n + G_g - g - 1] += v
+            sig_heat[G_n + G_g - g - 1] += v
 
     # ================================= Scattering terms
     sig_el = np.zeros(G)
