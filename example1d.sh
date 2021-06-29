@@ -1,7 +1,8 @@
 #
 # Simple cross-section for graphite using a custom neutron
 # group structure
-#
+# FIX ME
+
 CWD=$PWD
 
 if [[ -z "${ENDF_ROOT}" ]]; then
@@ -19,7 +20,7 @@ output_file_prefix="Cnat_graphite"
 #================================= Run NJOY
 cd njoy_runner || exit
 
-python generate_njoy_mgxs.py \
+python3 generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 --path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \
 --inelastic_thermal_number=229 \
@@ -54,9 +55,10 @@ cd "$CWD" || exit
 #================================= Run converter
 cd njoy_processor || exit
 
-python njoy_processor.py \
---path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
---output_file_path=$output_directory/$output_file_prefix.csx \
---plot
+python3 njoy_processor.py \
+--output_path=$output_directory \
+--njoy_output_filename=$output_file_prefix.njoy \
+--chixs_filename=$output_file_prefix.csx \
+## --plot
 
 cd "$CWD" || exit

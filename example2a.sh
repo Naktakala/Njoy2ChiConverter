@@ -1,6 +1,6 @@
 #
 # Simple cross-section for O16 using mostly defaults and 
-# the lanl30 neutron group structure and the gamma lanl 12 group structure
+# the lanl-30 neutron group structure and the gamma lanl-12 group structure
 #
 CWD=$PWD
 
@@ -14,23 +14,25 @@ neutron_file="n-008_O_016.endf"
 gamma_file="photoat-008_O_000.endf"
 # sab_file="tsl-graphite.endf"
 
-output_directory="../output/ENDF-B-VII-1/lanl30lanl12/"
-output_file_prefix="O16"
+output_directory="../output/ENDF-B-VII-1/LANL30_LANL12/"
+output_file_prefix="O16_n30g12_njoy2021"
 
 #================================= Run NJOY
 cd njoy_runner || exit
 
-python generate_njoy_mgxs.py \
+python3 generate_njoy_mgxs.py \
+--njoy_exec_name=njoy21 \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 --path_to_gamma_endf=$ENDF_ROOT/photoat/$gamma_file \
 --temperature=293.6 \
 --neutron_group_structure=3 \
---neutron_weight_function=1 \
---custom_neutron_wt_file=$output_directory/spectrum_file.txt \
+--neutron_weight_function=11 \
 --gamma_group_structure=3 \
 --gamma_weight_function=3 \
 --output_directory=$output_directory \
 --output_filename=$output_file_prefix.njoy
+
+### --custom_neutron_wt_file=$output_directory/spectrum_file.txt \
 
 # --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 # --path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \
@@ -55,9 +57,10 @@ cd "$CWD" || exit
 #================================= Run converter
 cd njoy_processor || exit
 
-python njoy_processor.py \
---path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
---output_file_path=$output_directory/$output_file_prefix.csx 
-# --plot
+python3 njoy_processor.py \
+--output_path=$output_directory \
+--njoy_output_filename=$output_file_prefix.njoy \
+--chixs_filename=$output_file_prefix.csx \
+## --plot
 
 cd "$CWD" || exit

@@ -42,7 +42,7 @@ def ProcessGroupStructure(nL_i, lines):
 
 
 # ===================================================================
-def ProcessCrossSection(nL_i, lines, header_size = 5, line_incr = 1):
+def ProcessCrossSection(nL_i, lines, header_size = 5, line_incr = 1, weighting_spectrum=False):
     """ Reads 1D neutron cross-sections from the lines.
       params:
         nL_i    File line number before data starts.
@@ -52,7 +52,11 @@ def ProcessCrossSection(nL_i, lines, header_size = 5, line_incr = 1):
         A table containing the group wise xs. """
     xs = []
     # Skip header
-    nL = nL_i + header_size
+    add_skip = 0
+    if lines[nL_i + 1].find("particle emission") >= 0:
+        add_skip = 1
+
+    nL = nL_i + header_size + add_skip
     words = lines[nL].split()
     num_words = len(words)
 
@@ -60,7 +64,11 @@ def ProcessCrossSection(nL_i, lines, header_size = 5, line_incr = 1):
         number_word = words[1]
         number_word = number_word.replace("+", "E+")
         number_word = number_word.replace("-", "E-")
-        xs.append([int(words[0]) - 1, float(number_word)])
+        if not weighting_spectrum:
+            xs.append([int(words[0]) - 1, float(number_word)])
+        else:
+            if words[0]=='flx':
+                xs.append([float(number_word)])
         nL += line_incr
 
         words = lines[nL].split()
@@ -175,7 +183,7 @@ def ProcessTransferMatrix(nL_i, lines):
     num_words = len(words)
 
     while num_words >= 2:
-        # Transform words 0.000-00 to 0.000E+00
+        # Transform words 0.000+00 to 0.000E+00
         for i in range(0, num_words):
             word = words[i]
             loc_of_sign = word.find("-", 2)
@@ -291,6 +299,9 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
     group_structures = {}
     cross_sections = {}
     transfer_matrices = {}
+    transfer_matrices['neutron'] ={}
+    transfer_matrices['gamma'] ={}
+    weighting_spectrum = {}
 
     # flag_run_processed             = False
     flag_gamma_structure_processed = False
@@ -313,29 +324,29 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
                 group_structures["gamma"] = ProcessGroupStructure(nL, file_lines)
                 flag_gamma_structure_processed = True
 
+###---------lines containing both mf and mt -----------------------------------
         if line.find("for mf") != -1 and line.find("mt") != -1:
-            if words[2] == "3" and words[5] == "1":
-                cross_sections["(n,total)"] = \
-                    ProcessCrossSection(nL, file_lines, line_incr = 2)
 
-            if words[2] == "3" and words[5] == "2":
-                cross_sections["(n,elastic)"] = \
-                    ProcessCrossSection(nL, file_lines)
+###---------cross section -----------------------------------------------------
+            if words[num_words - 2] == "cross" and words[num_words - 1] == "section":
+                # incr=2 for n,total
+                if words[2] == "3" and words[5] == "1":
+                    cross_sections[words[num_words - 3]] = \
+                        ProcessCrossSection(nL, file_lines, line_incr = 2)
+                    # this is to get the weighting spectrum
+                    weighting_spectrum[words[num_words - 3]] = \
+                        ProcessCrossSection(nL, file_lines, weighting_spectrum=True)
+                else:
+                    cross_sections[words[num_words - 3]] = \
+                        ProcessCrossSection(nL, file_lines)
 
-            if words[2] == "3" and words[5] == "4":
-                cross_sections["(n,inelastic)"] = \
-                    ProcessCrossSection(nL, file_lines)
-
-            if words[2] == "3" and words[5] == "16":
-                cross_sections["(n,2n)"] = \
-                    ProcessCrossSection(nL, file_lines)
-
+###---------other MF 3 --------------------------------------------------------
             if words[2] == "3" and words[4] == "mt259":
                 cross_sections["inv_velocity"] = \
                     ProcessCrossSection(nL, file_lines)
 
-            if words[2] == "3" and words[5] == "18":
-                cross_sections["(n,fission)"] = \
+            if words[2] == "3" and words[4] == "mt221":
+                cross_sections["free_gas"] = \
                     ProcessCrossSection(nL, file_lines)
 
             if words[2] == "3" and words[4] == "mt452":
@@ -350,6 +361,7 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
                 cross_sections["delayed_nubar"] = \
                     ProcessCrossSection(nL, file_lines)
 
+###---------MF 5 --------------------------------------------------------------
             if words[2] == "5" and words[5] == "18":
                 cross_sections["prompt_chi"] = \
                     ProcessPromptChi(nL, file_lines, 4)
@@ -360,38 +372,71 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
                 cross_sections["delayed_chi"] = \
                     ProcessDelayedChi(nL, file_lines)
 
+###---------matrix ------------------------------------------------------------
+            # caveat: the pp values from transfer(mf26) = 2x the pp from the xsec(mf23)
+            # caveat: the n,2n values from transfer(mf8/mt16) = 2x the n,2n from the xsec(mf3/mt16)
             if words[num_words - 1] == "matrix":
-                transfer_matrices[words[num_words - 3]] = \
+                particle_type = words[num_words - 2]
+                reaction_type  = words[num_words - 3]
+                if particle_type=="free-gas":
+                    particle_type = "neutron"
+                if particle_type=="inelastic_s(a,b)":
+                    particle_type = "neutron"
+                if particle_type=="elastic_s(a,b)":
+                    particle_type = "neutron"
+                transfer_matrices[particle_type][reaction_type] = \
                     ProcessTransferMatrix(nL, file_lines)
 
+###---------MF 23 -------------------------------------------------------------
+            # Total photon interaction
             if words[1] == "mf23" and words[3] == "mt501":
                 cross_sections["(g,total)"] = \
                     ProcessCrossSection(nL, file_lines, header_size = 4)
 
+            # Photon coherent scattering
             if words[1] == "mf23" and words[3] == "mt502":
                 cross_sections["(g,coherent)"] = \
                     ProcessCrossSection(nL, file_lines, header_size = 4)
 
+            # Photon incoherent scattering
             if words[1] == "mf23" and words[3] == "mt504":
                 cross_sections["(g,incoherent)"] = \
                     ProcessCrossSection(nL, file_lines, header_size = 4)
 
+            # 515: Pair production, electron field
+            # 517: Pair production, nuclear field
+            # 516: Pair production; sum of MT=515, 517.
             if words[1] == "mf23" and words[3] == "mt516":
                 cross_sections["(g,pair_production)"] = \
                     ProcessCrossSection(nL, file_lines, header_size = 4)
 
+            # Photoelectric absorption
+            if words[1] == "mf23" and words[3] == "mt522":
+                cross_sections["(g,abst)"] = \
+                    ProcessCrossSection(nL, file_lines, header_size = 4)
+
+            if words[1] == "mf23" and words[3] == "mt525":
+                cross_sections["(g,heat)"] = \
+                    ProcessCrossSection(nL, file_lines, header_size = 4)
+
+###---------MF 26 -------------------------------------------------------------
             if words[1] == "mf26" and words[3] == "mt502":
-                transfer_matrices["(g,coherent)"] = \
+                transfer_matrices['gamma']["(coherent)"] = \
                     ProcessTransferMatrixB(nL, file_lines,
                                            process_overflow = True)
 
+            # we do not see to save the xsec(g), it is just the sum_k xs(g->k)
+            # the incoh heat value is not saved either,
+            # the total heat xs (mf23/mt525) is the sum of the heat from
+            # inch(mf23/mt504) + abst(mf23/mt522) + pp(mf23/mt516)
             if words[1] == "mf26" and words[3] == "mt504":
-                transfer_matrices["(g,incoherent)"] = \
+                transfer_matrices['gamma']["(incoherent)"] = \
                     ProcessTransferMatrixB(nL, file_lines,
                                            process_overflow = True)
 
+            # caveat: the pp values from transfer(mf26) = 2x the pp from the xsec(mf23)
             if words[1] == "mf26" and words[3] == "mt516":
-                transfer_matrices["pair_production"] = \
+                transfer_matrices['gamma']["(pair_production)"] = \
                     ProcessTransferMatrixB(nL, file_lines,
                                            process_overflow = False)
 
@@ -402,14 +447,17 @@ def ReadNJOYfile(njoy_filename = "output", verbose = False):
     njoy_raw_data["transfer_matrices"] = transfer_matrices
 
     if verbose:
-        print("MF3 Cross-sections extracted:")
+        print("Cross-sections extracted:")
         xss = njoy_raw_data["cross_sections"]
         for k in xss:
             print("     " + k)
 
-        print("MF6 Transfer matrices extracted")
+        print("Transfer matrices extracted")
         mats = njoy_raw_data["transfer_matrices"]
-        for k in mats:
-            print("     " + k)
+        for ptype in mats:
+            print("     " + ptype)
+            for k in mats[ptype]:
+                print("        " + k)
+
 
     return njoy_raw_data

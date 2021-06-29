@@ -1,7 +1,7 @@
 #
-# Simple cross-section for graphite using mostly defaults and 
-# the xmas 172 group structure
-
+# Simple cross-section for O16 using mostly defaults and 
+# the lanl-30 neutron group structure
+#
 CWD=$PWD
 
 if [[ -z "${ENDF_ROOT}" ]]; then
@@ -10,32 +10,25 @@ if [[ -z "${ENDF_ROOT}" ]]; then
 fi
 
 #================================= Set properties here
-neutron_file="n-006_C_000.endf"
-sab_file="tsl-graphite.endf"
+neutron_file="n-008_O_016.endf"
+# gamma_file="photoat-008_O_000.endf"
+# sab_file="tsl-graphite.endf"
 
-output_directory="../output/ENDF-B-VII-1/xmas172/"
-output_file_prefix="Cnat_graphite"
+output_directory="../output/ENDF-B-VII-1/LANL30_LANL12/"
+output_file_prefix="O16_n30"
 
 #================================= Run NJOY
 cd njoy_runner || exit
 
 python3 generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
---path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \
---inelastic_thermal_number=229 \
---inelastic_thermal_num_atoms=1 \
---elastic_thermal_number=230 \
---temperature=296.0 \
---neutron_group_structure=22 \
+--temperature=293.6 \
+--neutron_group_structure=3 \
+--neutron_weight_function=11 \
 --output_directory=$output_directory \
 --output_filename=$output_file_prefix.njoy
 
-#python generate_njoy_mgxs.py \
-#--path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
-#--temperature=296.0 \
-#--neutron_group_structure=22 \
-#--output_directory=$output_directory \
-#--output_filename=$output_file_prefix.njoy
+### --custom_neutron_wt_file=$output_directory/spectrum_file.txt \
 
 # --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 # --path_to_sab=$ENDF_ROOT/thermal_scatt/$sab_file \

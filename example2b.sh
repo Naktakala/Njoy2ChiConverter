@@ -1,6 +1,6 @@
 #
 # Simple cross-section for O16 using mostly defaults and 
-# the lanl30 neutron group structure and the gamma lanl 12 group structure
+# FIXME: wrong title and missing files in repo for custom wt 
 #
 CWD=$PWD
 
@@ -14,13 +14,13 @@ neutron_file="n-008_O_016.endf"
 gamma_file="photoat-008_O_000.endf"
 # sab_file="tsl-graphite.endf"
 
-output_directory="../output/ENDF-B-VII-1/xmas172lanl48/"
+output_directory="../output/ENDF-B-VII-1/xmas172/"
 output_file_prefix="O16"
 
 #================================= Run NJOY
 cd njoy_runner || exit
 
-python generate_njoy_mgxs.py \
+python3 generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 --path_to_gamma_endf=$ENDF_ROOT/photoat/$gamma_file \
 --temperature=293.6 \
@@ -54,9 +54,10 @@ cd "$CWD" || exit
 #================================= Run converter
 cd njoy_processor || exit
 
-python njoy_processor.py \
---path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
---output_file_path=$output_directory/$output_file_prefix.csx 
-# --plot
+python3 njoy_processor.py \
+--output_path=$output_directory \
+--njoy_output_filename=$output_file_prefix.njoy \
+--chixs_filename=$output_file_prefix.csx \
+## --plot
 
 cd "$CWD" || exit

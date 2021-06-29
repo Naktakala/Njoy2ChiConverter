@@ -19,7 +19,7 @@ output_file_prefix="U235"
 #================================= Run NJOY
 cd njoy_runner || exit
 
-python generate_njoy_mgxs.py \
+python3 generate_njoy_mgxs.py \
 --path_to_neutron_endf=$ENDF_ROOT/neutrons/$neutron_file \
 --temperature=293.6 \
 --neutron_group_structure=22 \
@@ -44,14 +44,17 @@ python generate_njoy_mgxs.py \
 # --custom_neutron_wt_file="" \
 # --custom_gamma_wt_file="" \
 
+echo "===========================DONE with GENERATION"
+
 cd "$CWD" || exit
 
 #================================= Run converter
 cd njoy_processor || exit
 
-python njoy_processor.py \
---path_to_njoy_output=$output_directory/$output_file_prefix.njoy \
---output_file_path=$output_directory/$output_file_prefix.csx \
+python3 njoy_processor.py \
+--output_path=$output_directory \
+--njoy_output_filename=$output_file_prefix.njoy \
+--chixs_filename=$output_file_prefix.csx \
 --plot
 
 cd "$CWD" || exit
