@@ -93,8 +93,13 @@ def InfiniteMediumSpectrum(data, path, plot=False):
   gamma_group_bndries = outp[1][0]
   gamma_spectrum = outp[1][1]
   
-  maxval = np.max(neutron_spectrum)
-  neutron_spectrum /= maxval
+  #========================== Check for type of problems ==================#
+  if (neutron_spectrum != []):
+    maxval = np.max(neutron_spectrum)
+    neutron_spectrum /= maxval
+  elif (gamma_spectrum != []):
+    maxval = np.max(gamma_spectrum)
+  
   if (gamma_spectrum != []):
     gamma_spectrum /= maxval
 

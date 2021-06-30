@@ -62,14 +62,6 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
         cf.write("\n")
     cf.write("SIGMA_HEAT_END" + "\n\n")
     
-    #Test Start
-    Ratio_sigf = (np.linalg.norm(sig_f) / pow(10,-20))*100
-    cf.write("np.linalg.norm(sig_f) = " + str(Ratio_sigf) + "% of 1e-20")
-    cf.write("\n")
-    
-    
-    #Test End
-    
     if np.linalg.norm(sig_f) > 1.0e-20:
         cf.write("SIGMA_F_BEGIN" + "\n")
         for g in range(0, G):
