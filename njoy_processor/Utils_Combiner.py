@@ -14,7 +14,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     print(cross_sections.keys())
     
     # ================================= Determine # of groups
-    neutn_gs = group_structures["neutron"]
+    neutn_gs = group_structures["neutron"] if "neutron" in group_structures else []
     gamma_gs = group_structures["gamma"] if "gamma" in group_structures else []
 
     G_n = len(neutn_gs)
