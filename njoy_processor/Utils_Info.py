@@ -1,44 +1,54 @@
 import numpy as np 
 import matplotlib.pyplot as plt
-
 #====================================================================
-def GenerateSpectrumData(neutron_gs, psi, gamma_gs=[]):
+def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
   G_neutron = len(neutron_gs)
   G_gamma   = len(gamma_gs)
   G         = G_neutron + G_gamma
   assert len(psi) == G, \
     "Total neutron+gamma groups not compatible with psi."
+  assert len(sigma_heat) == G, \
+    "Total neutron+gamma groups not compatible with heating XS"
 
   #==================== Generate neutron spectrum data
   n_bndrys, n_vals = [], []
+  n_heating = []
   for g in range(G_neutron):
     gprime    = G_neutron - g - 1
     lo_bound  = neutron_gs[g][1]*1.0e-6
     hi_bound  = neutron_gs[g][2]*1.0e-6
     bin_width = hi_bound-lo_bound
     spectrum  = psi[G_neutron-g-1] / bin_width
-
     n_bndrys += [lo_bound, hi_bound]
     n_vals   +=  [spectrum, spectrum]
 
+    heating_spectrum  = sigma_heat[G_neutron-g-1]
+    n_heating += [heating_spectrum, heating_spectrum]
+
   n_bndrys = np.array(n_bndrys)
   n_vals   = np.array(n_vals)
+  n_heating = np.array(n_heating)
 
   #==================== Generate gamma spectrum data
   g_bndrys, g_vals = [], []
+  g_heating = []
   for g in range(G_gamma):
     gprime = (G_gamma - g - 1) + G_neutron
     lo_bound  = gamma_gs[g][1]*1.0e-6
     hi_bound  = gamma_gs[g][2]*1.0e-6
     bin_width = hi_bound-lo_bound
     spectrum  = psi[gprime] / bin_width
-
     g_bndrys += [lo_bound, hi_bound]
     g_vals   += [spectrum, spectrum]
+
+    heating_spectrum  = sigma_heat[gprime]
+    g_heating += [heating_spectrum, heating_spectrum]
+
   g_bndrys = np.array(g_bndrys)
   g_vals   = np.array(g_vals)
+  g_heating = np.array(g_heating)
 
-  return [(n_bndrys, n_vals), (g_bndrys, g_vals)]
+  return [(n_bndrys, n_vals), (g_bndrys, g_vals), (n_heating, g_heating)]
 
 #====================================================================
 def InfiniteMediumSpectrum(data, path, plot=False):
@@ -47,6 +57,7 @@ def InfiniteMediumSpectrum(data, path, plot=False):
   sig_t = data["sigma_t"]
   transfer_mats = data["transfer_matrices"]
   transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
+  sig_heat = data["sigma_heat"]
 
   #======================================= Get data from dictionary
   G_neutron = len(neutron_gs)
@@ -85,26 +96,31 @@ def InfiniteMediumSpectrum(data, path, plot=False):
   v_src[0] = 1.0
 
   v_psi = np.matmul(A_inv,v_src)
+  print("Norm spectrum: ")
+  print(np.linalg.norm(v_psi))
 
   #======================================= Build data/energy
-  outp = GenerateSpectrumData(neutron_gs, v_psi, gamma_gs)
+  outp = GenerateSpectrumData(neutron_gs, v_psi, sig_heat, gamma_gs)
   neutron_group_bndries = outp[0][0]
   neutron_spectrum = outp[0][1]
   gamma_group_bndries = outp[1][0]
   gamma_spectrum = outp[1][1]
+  neutron_heating_spectrum = outp[2][0]
+  gamma_heating_spectrum = outp[2][1]
+
+  #========================== Compute the heating rate for njoy
+  for i in range (0, len(neutron_heating_spectrum)):
+    neutron_heating_spectrum[i] *= neutron_spectrum[i]
+  for i in range (0, len(gamma_heating_spectrum)):
+    gamma_heating_spectrum[i] *= gamma_spectrum[i]
+
   
   #========================== Check for type of problems ==================#
-  if (neutron_spectrum != []):
-    maxval = np.max(neutron_spectrum)
-    neutron_spectrum /= maxval
-  elif (gamma_spectrum != []):
-    maxval = np.max(gamma_spectrum)
-  
-  if (gamma_spectrum != []):
-    gamma_spectrum /= maxval
-
+  #First NJOY normalization
   #======================================= Plot the spectra
   if plot:
+    #================================= Plot energy spectrum
+    #================================= Flux
     fig = plt.figure(figsize=(12,6))
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
     ax = fig.add_subplot(1, 2, 1)
@@ -120,7 +136,25 @@ def InfiniteMediumSpectrum(data, path, plot=False):
     plt.suptitle('neutron spectrum')
     plt.savefig(path+'Neutron_spectrum_'+str(G_neutron)+coupled_txt+'.png')
 
+    #================================= Heating XS
+    fig = plt.figure(figsize=(12,6))
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+    ax = fig.add_subplot(1, 2, 1)
+    ax.semilogy(neutron_group_bndries, neutron_heating_spectrum,color='r')
+    ax.set_xlabel("Energy (MeV)")
+    ax.set_ylabel("H(E) (eV/s)")
+    ax.grid('on')
+    ax = fig.add_subplot(1, 2, 2)
+    ax.loglog(neutron_group_bndries, neutron_heating_spectrum, color='r')
+    ax.set_xlabel("Energy (MeV)")
+    ax.set_ylabel("H(E) (eV/s)")
+    ax.grid('on')
+    plt.suptitle('neutron heating')
+    plt.savefig(path+'Neutron_Heating_spectrum_'+str(G_neutron)+coupled_txt+'.png')
+
+    #Testing
     if (gamma_spectrum != []):
+    #================================= Flux
       fig = plt.figure(figsize=(12,6))
       fig.subplots_adjust(hspace=0.4, wspace=0.4)
       ax = fig.add_subplot(1, 2, 1)
@@ -136,6 +170,21 @@ def InfiniteMediumSpectrum(data, path, plot=False):
       plt.suptitle('gamma spectrum')
       plt.savefig(path+'Gamma_spectrum_'+str(G_gamma)+'.png')
 
+    #================================= Heating
+      fig = plt.figure(figsize=(12,6))
+      fig.subplots_adjust(hspace=0.4, wspace=0.4)
+      ax = fig.add_subplot(1, 2, 1)
+      ax.semilogy(gamma_group_bndries, gamma_heating_spectrum, color ='r')
+      ax.set_xlabel("Energy (MeV)")
+      ax.set_ylabel("H(E) (eV/s)")
+      ax.grid('on')
+      ax = fig.add_subplot(1, 2, 2)
+      ax.loglog(gamma_group_bndries, gamma_heating_spectrum, color='r')
+      ax.set_xlabel("Energy (MeV)")
+      ax.set_ylabel("H(E) (eV/s)")
+      ax.grid('on')
+      plt.suptitle('gamma heating')
+      plt.savefig(path+'Gamma_heating_spectrum_'+str(G_gamma)+'.png')
 
 
 #====================================================================

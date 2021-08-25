@@ -25,11 +25,10 @@ argparser.add_argument("--njoy_output_filename",
                        default="", required=True)
 argparser.add_argument("--chixs_filename",
                        help="Name of Chi XS file",
-                       default="", required=True)
+                       default="", required=False)
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
                        action='store_true', required=False)
-
 args = argparser.parse_args()                                            
 
 
@@ -41,15 +40,20 @@ raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(
 
 # ===================================== Combine disjoint data
 print("Combining disjoint data")
-data = Utils_Combiner.BuildCombinedData(raw_njoy_data, plot=args.plot)
+data, problem_description = Utils_Combiner.BuildCombinedData(raw_njoy_data, plot=args.plot)
 
 # ===================================== Write cross-section
-chi_output_complete_path = args.output_path + "/" + args.chixs_filename
-print("Creating chi-cross-section in file " + chi_output_complete_path)
-Utils_XSWriter.WriteChiTechFile(data, chi_output_complete_path)
+# ======================= Test ===========
+# ====== Get the isotope and type of problem
+filename =  args.njoy_output_filename.split("_")
+isotope =  filename[0]
+problem_description[:0] = [isotope]
+print(problem_description)
+chi_output_complete_path = args.output_path + "/"
+Utils_XSWriter.WriteChiTechFile(data, problem_description, chi_output_complete_path)
 
 
 # ===================================== Generate spectrum
 import Utils_Info
-# FIXME: plot should be able to use args.plot when other issues are fixed
-Utils_Info.InfiniteMediumSpectrum(data, path=args.output_path, plot=True)
+Utils_Info.InfiniteMediumSpectrum(data, path=args.output_path, plot=args.plot)
+
