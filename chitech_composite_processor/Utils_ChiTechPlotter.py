@@ -8,7 +8,7 @@ import matplotlib.dates as mdates
 import Utils_Info as processor
 
 
-def PlotSpectra(outp, path, molar_mass="", mcnp_filename = "", more_njoy=False, extra_njoy_data={}):
+def PlotSpectra(outp, source, path, molar_mass="", mcnp_filename = "", more_chitech=False, extra_chitech_data={}):
   neutron_group_bndries = outp[0][0]
   neutron_spectrum = outp[0][1]
   gamma_group_bndries = outp[1][0]
@@ -23,9 +23,9 @@ def PlotSpectra(outp, path, molar_mass="", mcnp_filename = "", more_njoy=False, 
     gamma_heating_spectrum[i] *= gamma_spectrum[i]
   
   neutron_group_bndries_extra, neutron_spectrum_extra, gamma_group_bndries_extra, gamma_spectrum_extra, neutron_heating_spectrum_extra, gamma_heating_spectrum_extra = [], [], [], [], [], []
-  if more_njoy:
-    if extra_njoy_data != {}:
-      outp_extra = processor.InfiniteMediumSpectrum(extra_njoy_data, path ="", plot=False)
+  if more_chitech:
+    if extra_chitech_data != {}:
+      outp_extra = processor.InfiniteMediumSpectrum(extra_chitech_data, source, path ="", plot=False)
       neutron_group_bndries_extra = outp_extra[0][0]
       neutron_spectrum_extra = outp_extra[0][1]
       gamma_group_bndries_extra = outp_extra[1][0]
@@ -38,6 +38,8 @@ def PlotSpectra(outp, path, molar_mass="", mcnp_filename = "", more_njoy=False, 
         neutron_heating_spectrum_extra[i] *= neutron_spectrum_extra[i]
       for i in range (0, len(gamma_heating_spectrum)):
         gamma_heating_spectrum_extra[i] *= gamma_spectrum_extra[i]
+    else:
+      raise ValueError("The dictionary for additional chitech data is not found")
 
 
   
@@ -118,7 +120,7 @@ def PlotSpectra(outp, path, molar_mass="", mcnp_filename = "", more_njoy=False, 
           ax = fig.add_subplot(row,col,r+1)
           ax.plot(E, Flx, lw=lw, label = "$MCNP_{187}$", color = 'y')
           ax.plot(Sn_E, Sn_Flx, lw=lw, label = "$NJOY_{187}$", color = 'r')
-          if more_njoy:
+          if more_chitech:
             ax.plot(Sn_E_extra, Sn_Flx_extra, '--', lw=lw, label = "$NJOY_{32}$", color = 'k')
           ax.set_xlim(right = 16)
           if float(tally_name) > 100:

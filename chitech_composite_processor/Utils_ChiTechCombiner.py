@@ -10,12 +10,16 @@ Created on Fri Aug  6 11:38:48 2021
 import numpy as np
 
 def BuildCombinedData (chi_list, ratio):
+    # ==================== Check for valid ratio 
+    ratio_array = np.asarray(ratio, dtype = float)
+    print(np.isclose(np.sum(ratio_array), 1.0))
+    if not (np.isclose(np.sum(ratio_array), 1.0)):
+        raise ValueError("The sum of all atomic fractions is not close to 1.0")
+    
     data = {}
     
-    num_group = 0
-    num_moment = 0
     cs_OverallList = []
-    ratio = [79,21]
+    #ratio = [79,21]
     neutron_gs = []
     gamma_gs = []
     for i in range (len(chi_list)):
@@ -27,11 +31,12 @@ def BuildCombinedData (chi_list, ratio):
             #Get the group structure
             if line.find('GROUPS') != -1:
                 line_list  = line.split(' ')
-                if ((int(line_list[1]) != num_group) and (i > 0)):
-                    print("The group_structure is not the same in " + chi_list[i])
-                    print(int(line_list[1]) +  " vs " + num_group)
-                else:
+                if i == 0:
                     num_group = int(line_list[1])
+                else:
+                    if (int(line_list[1]) != num_group):
+                        err_msg = "The group_structure is not the same in " + str(chi_list[i]) + line_list[1] + str(num_group)
+                        raise ValueError(err_msg)
             
             #Get the group structures
             elif line.find('GS_BEGIN') != -1:
@@ -54,11 +59,12 @@ def BuildCombinedData (chi_list, ratio):
             #Get the moment
             elif ((line.find('MOMENTS') !=  -1) and (line.find('TRANSFER') == -1)):
                 line_list = line.split(' ')
-                if ((int(line_list[1]) != num_moment) and (i > 0)):
-                    print("The group_moment is not the same in " + chi_list[i])
-                    print(int(line_list[1]) +  " vs " + num_moment)
-                else:
+                if i == 0:
                     num_moment = int(line_list[1])
+                else:
+                    if (int(line_list[1]) != num_moment):
+                        err_msg = "The group moment is not the same in " + str(chi_list[i]) + line_list[1] + str(num_moment)
+                        raise ValueError(err_msg)
             
             #Get the cross_section
             elif ((line.find('TRANSFER') == -1) and (line.find('BEGIN') != -1)):
@@ -68,8 +74,6 @@ def BuildCombinedData (chi_list, ratio):
         cs_OverallList.append(cross_section)
         cf.close() 
     
-    # print(num_group)
-    # print(num_moment)
     
     data["G"] = num_group
     data["M"] = num_moment
@@ -78,8 +82,6 @@ def BuildCombinedData (chi_list, ratio):
     data["gamma_gs"] = gamma_gs
     
     #==================================== Find all cross section labels
-    #print(cs_OverallList)
-    intersection = set.intersection(*[set(x) for x in cs_OverallList])
     union = set.union(*[set(x) for x in cs_OverallList])
    
     #===================================  Process Cross-Sections
@@ -94,7 +96,7 @@ def BuildCombinedData (chi_list, ratio):
                     for j in range (0,num_group):
                         value_line = cf.readline().split()
                         if value_line != []:
-                            cs_value2[j] += float(value_line[1])*ratio[i]*pow(10,-2)
+                            cs_value2[j] += float(value_line[1])*ratio[i]
             cf.close()
         
         cs_dict[cs_name.lower()] = cs_value2
@@ -149,7 +151,7 @@ def BuildCombinedData (chi_list, ratio):
                             g += 1
                         
                         #Replace values in transfer matrixes
-                        XS_value = float(moment_line[-1])*ratio[i]*pow(10,-2)
+                        XS_value = float(moment_line[-1])*ratio[i]
                         moment_index = int(moment_line[1])
                         group_index = int(moment_line[2])
                         nonzero_index = int(moment_line[3])

@@ -52,7 +52,7 @@ def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
   return [(n_bndrys, n_vals), (g_bndrys, g_vals), (n_heating, g_heating)]
 
 #====================================================================
-def InfiniteMediumSpectrum(data, path, plot=False):
+def InfiniteMediumSpectrum(data, source, path, plot=False):
   neutron_gs = data["neutron_gs"]
   gamma_gs = data["gamma_gs"]
   sig_t = data["sigma_t"]
@@ -94,10 +94,19 @@ def InfiniteMediumSpectrum(data, path, plot=False):
   A_inv = np.linalg.inv(A)
 
   v_src = np.zeros(G)
+  # Get the source description
+  particle = source[0].lower()
+  energy_bin = source[1]
   # Get the source term:
-  src_term = create_source_spectrum(neutron_gs, 14.0, fission = False)
-  for i in range (len(src_term)):
-    v_src[i] = src_term[i]
+  if particle == "neutron":
+    src_term = create_source_spectrum(neutron_gs, energy_bin, fission = False)
+    for i in range (len(src_term)):
+      v_src[i] = src_term[i]
+  elif particle == "gamma":
+    src_term = create_source_spectrum(gamma_gs, energy_bin, fission = False)
+    for i in range (len(src_term)):
+      index = i + len(neutron_gs)
+      v_src[index] = src_term[i]
 
   v_psi = np.matmul(A_inv,v_src)
   # print("Norm spectrum: ")
@@ -109,25 +118,25 @@ def InfiniteMediumSpectrum(data, path, plot=False):
   return outp
 
 # ===================================================
-def create_source_spectrum(neutron_gs,myE,fission=False):
+def create_source_spectrum(group_structure,myE,fission=False):
     #Convert to eV
     myE *= pow(10,6)
 
-    Gn = len(neutron_gs)
+    Gn = len(group_structure)
     print(Gn)
     v_src = np.zeros(Gn) # this is a multigroup src spectrum (sum_g = 1)
     ###
     # find the idx in the neutron-gs when myE is located
     index = []
-    for i in range (len(neutron_gs)):
+    for i in range (len(group_structure)):
       #If between bounds
-      if ((myE < neutron_gs[i][2]) and (myE > neutron_gs[i][1])):
+      if ((myE < group_structure[i][2]) and (myE > group_structure[i][1])):
         index = [i]
       #If equals to upper bound
-      elif ( (myE == neutron_gs[i][2]) and (i != (len(neutron_gs) - 1)) ):
+      elif ( (myE == group_structure[i][2]) and (i != (len(group_structure) - 1)) ):
         index = [i, i+1]
       #If equals to lower bound
-      elif ( (myE == neutron_gs[i][1]) and (i != 0 ) ):
+      elif ( (myE == group_structure[i][1]) and (i != 0 ) ):
         index = [i, i-1]
 
     # if my chance, myE = existing bound, spread 0.5 to both bins
@@ -149,8 +158,8 @@ def create_source_spectrum(neutron_gs,myE,fission=False):
           b = 2.29 # 1/MeV
           return np.exp(-E/a) * np.sinh(np.sqrt(b*E))
       for i in range(Gn):
-          Elow = neutron_gs[i,1]/1e6
-          Eupp = neutron_gs[i,2]/1e6
+          Elow = group_structure[i,1]/1e6
+          Eupp = group_structure[i,2]/1e6
           result = integrate.quad(lambda x: chi(x), Elow, Eupp)
           v_src[i] = result[0]
       v_src = np.flip(v_src)

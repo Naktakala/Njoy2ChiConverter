@@ -1,10 +1,10 @@
 """Writes cross-sections to file using the combined Chi-tech data"""
 import numpy as np
 
-def WriteChiTechFile(data, chi_filename, comment = "# Output"):
+def WriteCombinedChiTechFile(combined_data, chi_filename, comment = "# Output"):
     #Start writing the file
-    num_group = data['G']
-    num_moment = data['M']
+    num_group = combined_data['G']
+    num_moment = combined_data['M']
     
     cf = open(chi_filename, 'w')
     cf.write(comment + "\n")
@@ -13,12 +13,12 @@ def WriteChiTechFile(data, chi_filename, comment = "# Output"):
     cf.write("\n")
     
     
-    for key in data:
+    for key in combined_data:
         #print(key)
         #print(bool(((key != "G") and (key != "M"))))
         if ((key != "G") and (key != "M")):
             if (key == 'neutron_gs'):
-                neutron_gs = data[key]
+                neutron_gs = combined_data[key]
                 print(len(neutron_gs))
                 if neutron_gs != [] :
                     cf.write("NEUTRON_GS_BEGIN" + "\n")
@@ -30,7 +30,7 @@ def WriteChiTechFile(data, chi_filename, comment = "# Output"):
                     cf.write("NEUTRON_GS_END" + "\n\n")
             
             elif (key == 'gamma_gs'):
-                gamma_gs = data[key]
+                gamma_gs = combined_data[key]
                 print(len(gamma_gs))
                 if gamma_gs != []:
                     cf.write("GAMMA_GS_BEGIN" + "\n")
@@ -43,8 +43,8 @@ def WriteChiTechFile(data, chi_filename, comment = "# Output"):
                 
             elif (key == 'transfer_matrices'):
                 # ============= Start writing the transfer matrix
-                transfer_mats = data[key]
-                transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
+                transfer_mats = combined_data[key]
+                transfer_mats_nonzeros = combined_data["transfer_matrices_sparsity"]
                 cf.write("TRANSFER_MOMENTS_BEGIN" + "\n")
                 for m in range (num_moment):
                     cf.write("# l = " + str(m) + "\n")
@@ -61,9 +61,9 @@ def WriteChiTechFile(data, chi_filename, comment = "# Output"):
             elif (key != "transfer_matrices_sparsity"):
                 #================  Start writing the cross_sections
                 cf.write(key.upper()+ "_BEGIN" + "\n")
-                for i in range(len(data[key])):
+                for i in range(len(combined_data[key])):
                     cf.write("{:<4d}".format(i) + " ")
-                    cf.write("{:<g}".format(data[key][i]))
+                    cf.write("{:<g}".format(combined_data[key][i]))
                     cf.write("\n")
                 cf.write(key.upper() + "_END" + "\n\n")
         

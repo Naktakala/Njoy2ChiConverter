@@ -2,7 +2,7 @@
 import Utils_ReadNJOYOutput
 import Utils_Combiner
 import Utils_XSWriter
-
+import Utils_NjoyPlotter
 import sys 
 import argparse
 
@@ -26,6 +26,9 @@ argparser.add_argument("--njoy_output_filename",
 argparser.add_argument("--chixs_filename",
                        help="Name of Chi XS file",
                        default="", required=False)
+argparser.add_argument("--source_term",
+                       help="Description of the source term in string form: particle type and energy value in MeV separated by a comma",
+                       default="", required=True)
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
                        action='store_true', required=False)
@@ -40,7 +43,7 @@ raw_njoy_data = Utils_ReadNJOYOutput.ReadNJOYfile(
 
 # ===================================== Combine disjoint data
 print("Combining disjoint data")
-data, problem_description = Utils_Combiner.BuildCombinedData(raw_njoy_data, plot=args.plot)
+data, problem_description = Utils_Combiner.BuildCombinedData(raw_njoy_data, plot=False)
 
 # ===================================== Write cross-section
 # ======================= Test ===========
@@ -54,6 +57,19 @@ Utils_XSWriter.WriteChiTechFile(data, problem_description, chi_output_complete_p
 
 
 # ===================================== Generate spectrum
+sys.path.insert(1,'../chitech_composite_processor')
 import Utils_Info
-Utils_Info.InfiniteMediumSpectrum(data, path=args.output_path, plot=args.plot)
+#Get the source term
+source=[]
+source_string=args.source_term.split(",")
+print(source_string)
+source.append(source_string[0])
+source.append(float(source_string[1]))
+
+out_p = Utils_Info.InfiniteMediumSpectrum(data, source, path=args.output_path, plot=args.plot)
+
+#FIXME: Remove if dont want to plot completely
+if args.plot:
+    Utils_NjoyPlotter.Njoy_plotter(out_p, path=args.output_path)
+
 

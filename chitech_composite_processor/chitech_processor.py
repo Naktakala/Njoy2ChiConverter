@@ -1,10 +1,9 @@
 """Executes the main steps of conversion"""
 import Utils_ChiTechCombiner
 import Utils_Info
-#import Utils_ReadNJOYOutput
-#import Utils_GsProcessor
 import Utils_CombinedXSWriter
 import Utils_ChiTechPlotter
+import Utils_Info
 import sys 
 import argparse
 
@@ -24,6 +23,9 @@ argparser.add_argument("--output_path",
                        default="", required=True)
 argparser.add_argument("--chixs_filename",
                        help="Name of Chi XS file",
+                       default="", required=True)
+argparser.add_argument("--source_term",
+                       help="Description of the source term in string form: particle type and energy value in MeV separated by a comma",
                        default="", required=True)
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
@@ -52,12 +54,12 @@ argparser.add_argument("--mcnp_filename",
                        default="", required=False)
 
 # ============================= Argument for additional Njoy plots
-argparser.add_argument("--more_njoy",
-                       help="If included, will produce plots of additional njoy data",
+argparser.add_argument("--more_chitech",
+                       help="If included, will produce plots of additional chitech data",
                        action='store_true', required=False)
 argparser.add_argument("--more_composite_chi_output_filename",
                        help="List of output files produced by ChiTech for the all elements in the composite",
-                       default="", required=True)
+                       default="", required=False)
 
 args = argparser.parse_args()    
 
@@ -67,7 +69,7 @@ atom_fraction=[]
 atom_fraction_string=args.composite_atomic_fraction.split(",")
 print(atom_fraction_string)
 for i in atom_fraction_string:
-    atom_fraction.append(int(i))
+    atom_fraction.append(float(i))
 
 # ===================================== Combine disjoint data from ChiTech file
 print("Combining disjoint data")
@@ -77,40 +79,40 @@ for i in range (len(composite_Chifilename)):
     composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
 data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
 
+# ===================================== Solve the infinite medium equation
+#Get the source term
+source=[]
+source_string=args.source_term.split(",")
+print(source_string)
+source.append(source_string[0])
+source.append(float(source_string[1]))
+processed_data = Utils_Info.InfiniteMediumSpectrum(data, source,path=args.output_path, plot=args.plot)
+
 # ===================================== Write cross-section
 chi_output_complete_path = args.output_path + "/" + args.chixs_filename
 print("Creating chi-cross-section in file " + chi_output_complete_path)
-Utils_CombinedXSWriter.WriteChiTechFile(data, chi_output_complete_path, comment = "# Output")
+Utils_CombinedXSWriter.WriteCombinedChiTechFile(data, chi_output_complete_path, comment = "# Output")
 
 # ===================================== Generate spectrum
 # FIXME: Check if this works with gamma-only problem later
-
-# Check if neutron problem
-neutron_gs = data["neutron_gs"]
-if neutron_gs == []:
-    print("No spectrum for gamma only problem")
+#================================== Get MCNP data if asked
+if args.mcnp:
+    mcnp_output_complete_path = args.mcnp_path + args.mcnp_filename
 else:
-    import Utils_Info
-    print(args.mcnp)
-    if args.mcnp:
-        mcnp_output_complete_path = args.mcnp_path + args.mcnp_filename
-    else:
-        mcnp_output_complete_path = ""
+    mcnp_output_complete_path = ""
 
-    # ================================== Process additional njoy data if needed ======
-    more_njoy_dict = {}
-    if args.more_njoy:
-        # ===================================== Combine disjoint data from ChiTech file
-        print("Combining disjoint data")
-        composite_Chifilename = args.more_composite_chi_output_filename.split(",")
-        print(composite_Chifilename)
-        for i in range (len(composite_Chifilename)):
-            composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
-        extra_data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
+# ================================== Process additional njoy data if needed ======
+extra_data = {}
+if args.more_chitech:
+    # ===================================== Combine disjoint data from ChiTech file
+    print("Combining disjoint data")
+    composite_Chifilename = args.more_composite_chi_output_filename.split(",")
+    print(composite_Chifilename)
+    for i in range (len(composite_Chifilename)):
+        composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
+    extra_data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
 
-    processed_data = Utils_Info.InfiniteMediumSpectrum(data, path=args.output_path, plot=True)
-    # FIXME: replaced with args.plot when everything is fixed
-    if args.plot: 
-        print("Plotting the Spectra")
-        Utils_ChiTechPlotter.PlotSpectra(processed_data, path=args.output_path, molar_mass=args.molar_mass, mcnp_filename=mcnp_output_complete_path, more_njoy=args.more_njoy, extra_njoy_data = extra_data)
+if args.plot: 
+    print("Plotting the Spectra")
+    Utils_ChiTechPlotter.PlotSpectra(processed_data, source, path=args.output_path, molar_mass=args.molar_mass, mcnp_filename=mcnp_output_complete_path, more_chitech=args.more_chitech, extra_chitech_data = extra_data)
 
