@@ -8,42 +8,8 @@ import matplotlib.dates as mdates
 import Utils_Info as processor
 
 
-def PlotSpectra(outp, source, path, molar_mass="", mcnp_filename = "", more_chitech=False, extra_chitech_data={}):
-  neutron_group_bndries = outp[0][0]
-  neutron_spectrum = outp[0][1]
-  gamma_group_bndries = outp[1][0]
-  gamma_spectrum = outp[1][1]
-  neutron_heating_spectrum = outp[2][0]
-  gamma_heating_spectrum = outp[2][1]
-
-  #========================== Compute the heating rate for njoy
-  for i in range (0, len(neutron_heating_spectrum)):
-    neutron_heating_spectrum[i] *= neutron_spectrum[i]
-  for i in range (0, len(gamma_heating_spectrum)):
-    gamma_heating_spectrum[i] *= gamma_spectrum[i]
-  
-  neutron_group_bndries_extra, neutron_spectrum_extra, gamma_group_bndries_extra, gamma_spectrum_extra, neutron_heating_spectrum_extra, gamma_heating_spectrum_extra = [], [], [], [], [], []
-  if more_chitech:
-    if extra_chitech_data != {}:
-      outp_extra = processor.InfiniteMediumSpectrum(extra_chitech_data, source, path ="", plot=False)
-      neutron_group_bndries_extra = outp_extra[0][0]
-      neutron_spectrum_extra = outp_extra[0][1]
-      gamma_group_bndries_extra = outp_extra[1][0]
-      gamma_spectrum_extra = outp_extra[1][1]
-      neutron_heating_spectrum_extra = outp_extra[2][0]
-      gamma_heating_spectrum_extra = outp_extra[2][1]
-
-      #========================== Compute the heating rate for njoy
-      for i in range (0, len(neutron_heating_spectrum_extra)):
-        neutron_heating_spectrum_extra[i] *= neutron_spectrum_extra[i]
-      for i in range (0, len(gamma_heating_spectrum)):
-        gamma_heating_spectrum_extra[i] *= gamma_spectrum_extra[i]
-    else:
-      raise ValueError("The dictionary for additional chitech data is not found")
-
-
-  
-  #========================== Check for type of problems ==================#
+def PlotSpectra(big_processed_data, source, path, molar_mass="", mcnp_filename = ""):
+  #========================== Check for type of plots ==================#
   #from dtra_n_g_mcnp_post_process import n_spectrum
   if (mcnp_filename != ""):
     tally, tally_dict, atom_density, gram_density = mcnp_reader.ReadMcnpFile(mcnp_filename)
@@ -84,44 +50,51 @@ def PlotSpectra(outp, source, path, molar_mass="", mcnp_filename = "", more_chit
                 Flx = [i*pow(10,12)*gram_density*(1/molar_mass)*0.6022 for i in Flx]
               elif reaction_type == "Heating":
                   #If heating:
-                Flx = [i*pow(10,18)*gram_density for i in Flx]
-          
-          #Get Njoy data
-          # If deals with neutrons        
-          if particle_type == "Neutron":
-            # If deals with flux:
-            if reaction_type == "Flux":
-              Sn_E = neutron_group_bndries
-              Sn_Flx = neutron_spectrum
-              Sn_E_extra = neutron_group_bndries_extra
-              Sn_Flx_extra = neutron_spectrum_extra
-            # If deals with heating:
-            elif reaction_type == "Heating":
-              Sn_E = neutron_group_bndries
-              Sn_Flx = neutron_heating_spectrum
-              Sn_E_extra = neutron_group_bndries_extra
-              Sn_Flx_extra = neutron_heating_spectrum_extra
-          elif particle_type == "Gamma":
-            if (gamma_spectrum != []):
-              # If deals with flux:
-              if reaction_type == "Flux":
-                Sn_E = gamma_group_bndries
-                Sn_Flx = gamma_spectrum
-                Sn_E_extra = gamma_group_bndries_extra
-                Sn_Flx_extra = gamma_spectrum_extra
-              # If deals with heating:
-              elif reaction_type == "Heating":
-                Sn_E = gamma_group_bndries
-                Sn_Flx = gamma_heating_spectrum
-                Sn_E_extra = gamma_group_bndries_extra
-                Sn_Flx_extra = gamma_heating_spectrum_extra
+                Flx = [i*pow(10,18) for i in Flx]
           
           #Start plotting
           ax = fig.add_subplot(row,col,r+1)
-          ax.plot(E, Flx, lw=lw, label = "$MCNP_{187}$", color = 'y')
-          ax.plot(Sn_E, Sn_Flx, lw=lw, label = "$NJOY_{187}$", color = 'r')
-          if more_chitech:
-            ax.plot(Sn_E_extra, Sn_Flx_extra, '--', lw=lw, label = "$NJOY_{32}$", color = 'k')
+          ax.plot(E, Flx, lw=lw, label = "$MCNP_{187}$")
+          #Get Njoy data
+          for outp in big_processed_data:
+            # If deals with neutrons 
+            neutron_group_bndries = outp[0][0]
+            neutron_spectrum = outp[0][1]
+            gamma_group_bndries = outp[1][0]
+            gamma_spectrum = outp[1][1]
+            neutron_heating_spectrum = outp[2][0]
+            gamma_heating_spectrum = outp[2][1]
+
+            #Get the group structure
+            G_n = len(list(set(neutron_group_bndries))) - 1
+            G_g = len(list(set(gamma_group_bndries))) - 1
+            #========================== Compute the heating rate for njoy
+            for i in range (0, len(neutron_heating_spectrum)):
+              neutron_heating_spectrum[i] *= neutron_spectrum[i]
+            for i in range (0, len(gamma_heating_spectrum)):
+              gamma_heating_spectrum[i] *= gamma_spectrum[i]       
+            if particle_type == "Neutron":
+              # If deals with flux:
+              if reaction_type == "Flux":
+                Sn_E = neutron_group_bndries
+                Sn_Flx = neutron_spectrum
+              # If deals with heating:
+              elif reaction_type == "Heating":
+                Sn_E = neutron_group_bndries
+                Sn_Flx = neutron_heating_spectrum
+            elif particle_type == "Gamma":
+              if (gamma_spectrum != []):
+                # If deals with flux:
+                if reaction_type == "Flux":
+                  Sn_E = gamma_group_bndries
+                  Sn_Flx = gamma_spectrum
+                # If deals with heating:
+                elif reaction_type == "Heating":
+                  Sn_E = gamma_group_bndries
+                  Sn_Flx = gamma_heating_spectrum
+            ax.plot(Sn_E, Sn_Flx, lw=lw, label = "$NJOY_{n%.dg%.d}$"%(G_n, G_g))
+          #ax.plot(E, Flx, lw=lw, label = "$MCNP_{%.d}$"%(G_n), color = 'y')
+
           ax.set_xlim(right = 16)
           if float(tally_name) > 100:
             ax.set_title("Fine MCNP GS", fontsize=11)
@@ -130,8 +103,7 @@ def PlotSpectra(outp, source, path, molar_mass="", mcnp_filename = "", more_chit
           ax.set_yscale('log')
           plt.xticks(fontsize=8)
           plt.yticks(fontsize=8)
-      
-      
+
           ax.spines['right'].set_visible(False)
           ax.spines['top'].set_visible(False)
           ax.xaxis.set_ticks_position('bottom')
@@ -155,75 +127,87 @@ def PlotSpectra(outp, source, path, molar_mass="", mcnp_filename = "", more_chit
         plt.savefig(path + '/' + particle_type + '_' + reaction_type + '_Histogram' + '.png')
 
   else:
-    #================================= Plot energy spectrum
-    #================================= Flux
-    fig = plt.figure(figsize=(12,6))
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    ax = fig.add_subplot(1, 2, 1)
-    ax.semilogy(neutron_group_bndries, neutron_spectrum)
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("$\phi(E)$")
-    ax.grid('on')
-    ax = fig.add_subplot(1, 2, 2)
-    ax.loglog(neutron_group_bndries, neutron_spectrum)
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("$\phi(E)$")
-    ax.grid('on')
-    fig.legend()
-    plt.suptitle('Neutron spectrum')
-    plt.savefig(path+'Njoy Neutron_spectrum_'+str(G_neutron)+coupled_txt+'.png')
+    for outp in big_processed_data:
+      # If deals with neutrons 
+      neutron_group_bndries = outp[0][0]
+      neutron_spectrum = outp[0][1]
+      gamma_group_bndries = outp[1][0]
+      gamma_spectrum = outp[1][1]
+      neutron_heating_spectrum = outp[2][0]
+      gamma_heating_spectrum = outp[2][1]
 
-    #================================= Heating XS
-    fig = plt.figure(figsize=(12,6))
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    ax = fig.add_subplot(1, 2, 1)
-    ax.semilogy(neutron_group_bndries, neutron_heating_spectrum,color='r')
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("H(E) (eV/s)")
-    ax.grid('on')
-    ax = fig.add_subplot(1, 2, 2)
-    ax.loglog(neutron_group_bndries, neutron_heating_spectrum, color='r')
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("H(E) (eV/s)")
-    ax.grid('on')
-    fig.legend()
-    plt.suptitle('Neutron heating')
-    plt.savefig(path+'Njoy Neutron_Heating_spectrum_'+str(G_neutron)+coupled_txt+'.png')
-
-    #Testing
-    if (gamma_spectrum != []):
-    #================================= Flux
+      #Get the group structure
+      G_n = len(list(set(neutron_group_bndries))) - 1
+      G_g = len(list(set(gamma_group_bndries))) - 1
+      #================================= Plot energy spectrum
+      #================================= Flux
       fig = plt.figure(figsize=(12,6))
       fig.subplots_adjust(hspace=0.4, wspace=0.4)
       ax = fig.add_subplot(1, 2, 1)
-      ax.semilogy(gamma_group_bndries, gamma_spectrum)
+      ax.semilogy(neutron_group_bndries, neutron_spectrum)
       ax.set_xlabel("Energy (MeV)")
       ax.set_ylabel("$\phi(E)$")
       ax.grid('on')
       ax = fig.add_subplot(1, 2, 2)
-      ax.loglog(gamma_group_bndries, gamma_spectrum)
+      ax.loglog(neutron_group_bndries, neutron_spectrum)
       ax.set_xlabel("Energy (MeV)")
       ax.set_ylabel("$\phi(E)$")
       ax.grid('on')
       fig.legend()
-      plt.suptitle('Gamma spectrum')
-      plt.savefig(path+'Njoy Gamma_spectrum_'+str(G_gamma)+'.png')
+      plt.suptitle('Neutron spectrum')
+      plt.savefig(path+'Njoy Neutron_spectrum_n%.dg%.d.png'%(G_n, G_g))
 
-    #================================= Heating
+      #================================= Heating XS
       fig = plt.figure(figsize=(12,6))
       fig.subplots_adjust(hspace=0.4, wspace=0.4)
       ax = fig.add_subplot(1, 2, 1)
-      ax.semilogy(gamma_group_bndries, gamma_heating_spectrum, color ='r')
+      ax.semilogy(neutron_group_bndries, neutron_heating_spectrum,color='r')
       ax.set_xlabel("Energy (MeV)")
       ax.set_ylabel("H(E) (eV/s)")
       ax.grid('on')
       ax = fig.add_subplot(1, 2, 2)
-      ax.loglog(gamma_group_bndries, gamma_heating_spectrum, color='r')
+      ax.loglog(neutron_group_bndries, neutron_heating_spectrum, color='r')
       ax.set_xlabel("Energy (MeV)")
       ax.set_ylabel("H(E) (eV/s)")
       ax.grid('on')
       fig.legend()
-      plt.suptitle('Gamma heating')
-      plt.savefig(path+'Njoy Gamma_heating_spectrum_'+str(G_gamma)+'.png')
+      plt.suptitle('Neutron heating')
+      plt.savefig(path+'Njoy Neutron_Heating_spectrum_n%.dg%.d.png'%(G_n, G_g))
+
+      #Testing
+      if (gamma_spectrum != []):
+      #================================= Flux
+        fig = plt.figure(figsize=(12,6))
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        ax = fig.add_subplot(1, 2, 1)
+        ax.semilogy(gamma_group_bndries, gamma_spectrum)
+        ax.set_xlabel("Energy (MeV)")
+        ax.set_ylabel("$\phi(E)$")
+        ax.grid('on')
+        ax = fig.add_subplot(1, 2, 2)
+        ax.loglog(gamma_group_bndries, gamma_spectrum)
+        ax.set_xlabel("Energy (MeV)")
+        ax.set_ylabel("$\phi(E)$")
+        ax.grid('on')
+        fig.legend()
+        plt.suptitle('Gamma spectrum')
+        plt.savefig(path+'Njoy Gamma_spectrum_n%.dg%.d.png'%(G_n, G_g))
+
+      #================================= Heating
+        fig = plt.figure(figsize=(12,6))
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        ax = fig.add_subplot(1, 2, 1)
+        ax.semilogy(gamma_group_bndries, gamma_heating_spectrum, color ='r')
+        ax.set_xlabel("Energy (MeV)")
+        ax.set_ylabel("H(E) (eV/s)")
+        ax.grid('on')
+        ax = fig.add_subplot(1, 2, 2)
+        ax.loglog(gamma_group_bndries, gamma_heating_spectrum, color='r')
+        ax.set_xlabel("Energy (MeV)")
+        ax.set_ylabel("H(E) (eV/s)")
+        ax.grid('on')
+        fig.legend()
+        plt.suptitle('Gamma heating')
+        plt.savefig(path+'Njoy Gamma_heating_spectrum_n%.dg%.d.png'%(G_n, G_g))
 
 

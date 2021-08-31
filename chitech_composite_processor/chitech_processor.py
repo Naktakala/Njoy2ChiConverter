@@ -25,7 +25,7 @@ argparser.add_argument("--chixs_filename",
                        help="Name of Chi XS file",
                        default="", required=True)
 argparser.add_argument("--source_term",
-                       help="Description of the source term in string form: particle type and energy value in MeV separated by a comma",
+                       help="Description of the source term in string form: particle type, energy value in MeV and if fission is included, separated by a comma",
                        default="", required=True)
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
@@ -36,7 +36,7 @@ argparser.add_argument("--molar_mass",
 
 # ====================================== Argument for composite
 argparser.add_argument("--composite_chi_output_filename",
-                       help="List of output files produced by ChiTech for the all elements in the composite",
+                       help="List of output files produced by ChiTech for the composite separated by group structure with || in between each gs",
                        default="", required=True)
 argparser.add_argument("--composite_atomic_fraction",
                        help="List of the atomics fraction of all elements in the composite",
@@ -53,14 +53,6 @@ argparser.add_argument("--mcnp_filename",
                        help="Name of output file produced by MCNP",
                        default="", required=False)
 
-# ============================= Argument for additional Njoy plots
-argparser.add_argument("--more_chitech",
-                       help="If included, will produce plots of additional chitech data",
-                       action='store_true', required=False)
-argparser.add_argument("--more_composite_chi_output_filename",
-                       help="List of output files produced by ChiTech for the all elements in the composite",
-                       default="", required=False)
-
 args = argparser.parse_args()    
 
 
@@ -72,26 +64,45 @@ for i in atom_fraction_string:
     atom_fraction.append(float(i))
 
 # ===================================== Combine disjoint data from ChiTech file
+big_data = []
 print("Combining disjoint data")
-composite_Chifilename = args.composite_chi_output_filename.split(",")
-print(composite_Chifilename)
-for i in range (len(composite_Chifilename)):
-    composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
-data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
-
-# ===================================== Solve the infinite medium equation
-#Get the source term
-source=[]
-source_string=args.source_term.split(",")
-print(source_string)
-source.append(source_string[0])
-source.append(float(source_string[1]))
-processed_data = Utils_Info.InfiniteMediumSpectrum(data, source,path=args.output_path, plot=args.plot)
+chitech_gs_list = args.composite_chi_output_filename.split("||")
+for chi_gs in chitech_gs_list:
+    composite_Chifilename = chi_gs.split(",")
+    print(composite_Chifilename)
+    for i in range (len(composite_Chifilename)):
+        composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
+    data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
+    big_data.append(data)
 
 # ===================================== Write cross-section
+# FIXME: Possibly add an option for user to pick which group structure to write in chitech format
 chi_output_complete_path = args.output_path + "/" + args.chixs_filename
 print("Creating chi-cross-section in file " + chi_output_complete_path)
+data = big_data[0]
 Utils_CombinedXSWriter.WriteCombinedChiTechFile(data, chi_output_complete_path, comment = "# Output")
+
+# ===================================== Create the source definition
+source_def={}
+source_string=args.source_term.split(",")
+print(source_string)
+source_def["Particle type"] = source_string[0]
+source_def["Energy value"] = float(source_string[1])
+if len(source_string) > 2:
+    source_def["If fission"] = True
+else:
+    source_def["If fission"] = False
+
+print("Source definition: ", end = "")
+for keys in source_def.keys():
+    print(str(keys) + ": " + str(source_def[keys]), end = ", ")
+print()
+
+# ===================================== Solve the infinite medium equation
+big_processed_data = []
+for data in big_data:
+    processed_data = Utils_Info.InfiniteMediumSpectrum(data, source_def,path=args.output_path, plot=args.plot)
+    big_processed_data.append(processed_data)
 
 # ===================================== Generate spectrum
 # FIXME: Check if this works with gamma-only problem later
@@ -101,18 +112,7 @@ if args.mcnp:
 else:
     mcnp_output_complete_path = ""
 
-# ================================== Process additional njoy data if needed ======
-extra_data = {}
-if args.more_chitech:
-    # ===================================== Combine disjoint data from ChiTech file
-    print("Combining disjoint data")
-    composite_Chifilename = args.more_composite_chi_output_filename.split(",")
-    print(composite_Chifilename)
-    for i in range (len(composite_Chifilename)):
-        composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
-    extra_data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
-
 if args.plot: 
     print("Plotting the Spectra")
-    Utils_ChiTechPlotter.PlotSpectra(processed_data, source, path=args.output_path, molar_mass=args.molar_mass, mcnp_filename=mcnp_output_complete_path, more_chitech=args.more_chitech, extra_chitech_data = extra_data)
+    Utils_ChiTechPlotter.PlotSpectra(big_processed_data, source_def, path=args.output_path, molar_mass=args.molar_mass, mcnp_filename=mcnp_output_complete_path)
 

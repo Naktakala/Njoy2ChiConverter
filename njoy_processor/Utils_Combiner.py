@@ -44,7 +44,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
 
     # ================================= Combine sig_t
     sig_t = np.zeros(G)
-
+    g_sig_t = np.zeros(G_g)
     if "(n,total)" in cross_sections:
         data = cross_sections["(n,total)"]
         for entry in data:
@@ -58,6 +58,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_t[G_n + G_g - g - 1] += v
+            g_sig_t[G_g - g -1] += v
     
     # ================================= Combine Heating Cross-Sections
     sig_heat = np.zeros(G)
@@ -84,6 +85,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_el[G_n - g - 1] += v
+    
+    sig_coht = np.zeros(G_g)
+    if "(g,coherent)" in cross_sections:
+        data = cross_sections["(g,coherent)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_coht[G_g - g - 1] += v
 
     sig_inel = np.zeros(G)
     if "(n,inel)" in cross_sections:
@@ -92,6 +101,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_inel[G_n - g - 1] += v
+
+    sig_incoht = np.zeros(G_g)
+    if "(g,incoherent)" in cross_sections:
+        data = cross_sections["(g,incoherent)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_incoht[G_g - g - 1] += v
 
     sig_freegas = np.zeros(G)
     if "free_gas" in cross_sections:
@@ -128,6 +145,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                 g = entry[0]
                 v = entry[1]
                 sig_nxn[G_n - g - 1] += v
+
 
     # ================================= Inverse velocity term
     inv_v = np.zeros(G)
@@ -447,10 +465,30 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                         break  # from for g
 
     # Compute new sigma_t, sigma_a, sigma_s 
+    # FIXME: Ask Dr. Ragusa why ?
+    sig_s = np.sum(transfer_mats[0], axis = 1)
+    #Correction for gamma scattering
+    if G_g > 0:
+        if (len(sig_coht) > 0) and (len(sig_incoht) > 0):
+            for i in range (len(sig_coht)):
+                sig_s[G_n+i] = sig_coht[i] + sig_incoht[i]
+
+    #sig_t = sig_a + sig_s
     ### This is to correct the total due to across-particule-type transfers
     sig_a = sig_t - sig_el - sig_inel
-    sig_s = np.sum(transfer_mats[0], axis = 1)
-    sig_t = sig_a + sig_s
+    #Correction for gamma absorption
+    if G_g > 0:
+        sig_pairprod = np.zeros(G_g)
+        if "(g,pair_production)" in cross_sections:
+            data = cross_sections["(g,pair_production)"]
+            for entry in data:
+                g = entry[0]
+                v = entry[1]
+                sig_pairprod[G_g - g - 1] += v
+        
+        for i in range (len(sig_pairprod)):
+            sig_a[G_n + i] = sig_t[G_n + i] - sig_s[G_n + i] - sig_pairprod[i]
+            
     #
     sig_sab = sig_el_sab + sig_inel_sab
 

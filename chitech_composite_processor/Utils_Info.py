@@ -23,7 +23,8 @@ def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
     n_bndrys += [lo_bound, hi_bound]
     n_vals   +=  [spectrum, spectrum]
 
-    heating_spectrum  = sigma_heat[G_neutron-g-1]
+    #heating_spectrum  = sigma_heat[G_neutron-g-1]
+    heating_spectrum  = sigma_heat[gprime]
     n_heating += [heating_spectrum, heating_spectrum]
 
   n_bndrys = np.array(n_bndrys)
@@ -52,7 +53,7 @@ def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
   return [(n_bndrys, n_vals), (g_bndrys, g_vals), (n_heating, g_heating)]
 
 #====================================================================
-def InfiniteMediumSpectrum(data, source, path, plot=False):
+def InfiniteMediumSpectrum(data, source_def, path, plot=False):
   neutron_gs = data["neutron_gs"]
   gamma_gs = data["gamma_gs"]
   sig_t = data["sigma_t"]
@@ -95,15 +96,16 @@ def InfiniteMediumSpectrum(data, source, path, plot=False):
 
   v_src = np.zeros(G)
   # Get the source description
-  particle = source[0].lower()
-  energy_bin = source[1]
+  particle = source_def["Particle type"].lower()
+  energy_bin = source_def["Energy value"]
+  if_fission = source_def["If fission"]
   # Get the source term:
   if particle == "neutron":
-    src_term = create_source_spectrum(neutron_gs, energy_bin, fission = False)
+    src_term = create_source_spectrum(neutron_gs, energy_bin, fission = if_fission)
     for i in range (len(src_term)):
       v_src[i] = src_term[i]
   elif particle == "gamma":
-    src_term = create_source_spectrum(gamma_gs, energy_bin, fission = False)
+    src_term = create_source_spectrum(gamma_gs, energy_bin, fission = if_fission)
     for i in range (len(src_term)):
       index = i + len(neutron_gs)
       v_src[index] = src_term[i]
@@ -203,9 +205,3 @@ def ComputeKinf(data):
   neutron_group_bndries = outp[0][0]
   neutron_spectrum = outp[0][1]
 
-  fig = plt.figure(figsize=(6,6))
-  plt.loglog(neutron_group_bndries, neutron_spectrum)
-  # plt.xlabel("Energy (MeV)")
-  plt.ylabel("$\phi(E)$")
-  plt.grid(True)
-  plt.show()
