@@ -24,7 +24,7 @@ def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
     n_vals   +=  [spectrum, spectrum]
 
     #heating_spectrum  = sigma_heat[G_neutron-g-1]
-    heating_spectrum  = sigma_heat[gprime]
+    heating_spectrum  = sigma_heat[gprime]*spectrum
     n_heating += [heating_spectrum, heating_spectrum]
 
   n_bndrys = np.array(n_bndrys)
@@ -43,7 +43,7 @@ def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
     g_bndrys += [lo_bound, hi_bound]
     g_vals   += [spectrum, spectrum]
 
-    heating_spectrum  = sigma_heat[gprime]
+    heating_spectrum  = sigma_heat[gprime]*spectrum
     g_heating += [heating_spectrum, heating_spectrum]
 
   g_bndrys = np.array(g_bndrys)

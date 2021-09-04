@@ -46,12 +46,12 @@ def PlotSpectra(big_processed_data, source, path, molar_mass="", mcnp_filename =
               E, Flx = mcnp_reader.convert_spectrum(spectrum)
               if reaction_type == "Flux":
                 #If flux
-                #Flx = [i*pow(10,12)*gram_density for i in Flx]
-                Flx = [i*pow(10,12)*gram_density*(1/molar_mass)*0.6022 for i in Flx]
+                Flx = [i*pow(10,12) for i in Flx]
+                #Flx = [i*pow(10,12)*gram_density*(1/molar_mass)*0.6022 for i in Flx]
               elif reaction_type == "Heating":
                   #If heating:
-                Flx = [i*pow(10,18) for i in Flx]
-          
+                Flx = [i*pow(10,18)*gram_density for i in Flx]
+                # Flx = [i*pow(10,18)*gram_density for i in Flx]
           #Start plotting
           ax = fig.add_subplot(row,col,r+1)
           ax.plot(E, Flx, lw=lw, label = "$MCNP_{187}$")
@@ -68,11 +68,7 @@ def PlotSpectra(big_processed_data, source, path, molar_mass="", mcnp_filename =
             #Get the group structure
             G_n = len(list(set(neutron_group_bndries))) - 1
             G_g = len(list(set(gamma_group_bndries))) - 1
-            #========================== Compute the heating rate for njoy
-            for i in range (0, len(neutron_heating_spectrum)):
-              neutron_heating_spectrum[i] *= neutron_spectrum[i]
-            for i in range (0, len(gamma_heating_spectrum)):
-              gamma_heating_spectrum[i] *= gamma_spectrum[i]       
+
             if particle_type == "Neutron":
               # If deals with flux:
               if reaction_type == "Flux":
@@ -92,6 +88,7 @@ def PlotSpectra(big_processed_data, source, path, molar_mass="", mcnp_filename =
                 elif reaction_type == "Heating":
                   Sn_E = gamma_group_bndries
                   Sn_Flx = gamma_heating_spectrum
+                  
             ax.plot(Sn_E, Sn_Flx, lw=lw, label = "$NJOY_{n%.dg%.d}$"%(G_n, G_g))
           #ax.plot(E, Flx, lw=lw, label = "$MCNP_{%.d}$"%(G_n), color = 'y')
 

@@ -55,18 +55,27 @@ print(problem_description)
 chi_output_complete_path = args.output_path + "/"
 Utils_XSWriter.WriteChiTechFile(data, problem_description, chi_output_complete_path)
 
+#Get the source definition
+source_def={}
+source_string=args.source_term.split(",")
+print(source_string)
+source_def["Particle type"] = source_string[0]
+source_def["Energy value"] = float(source_string[1])
+if len(source_string) > 2:
+    source_def["If fission"] = True
+else:
+    source_def["If fission"] = False
+
+print("Source definition: ", end = "")
+for keys in source_def.keys():
+    print(str(keys) + ": " + str(source_def[keys]), end = ", ")
+print()
 
 # ===================================== Generate spectrum
 sys.path.insert(1,'../chitech_composite_processor')
 import Utils_Info
-#Get the source term
-source=[]
-source_string=args.source_term.split(",")
-print(source_string)
-source.append(source_string[0])
-source.append(float(source_string[1]))
 
-out_p = Utils_Info.InfiniteMediumSpectrum(data, source, path=args.output_path, plot=args.plot)
+out_p = Utils_Info.InfiniteMediumSpectrum(data, source_def, path=args.output_path, plot=args.plot)
 
 #FIXME: Remove if dont want to plot completely
 if args.plot:
