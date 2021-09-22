@@ -44,7 +44,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
 
     # ================================= Combine sig_t
     sig_t = np.zeros(G)
-    g_sig_t = np.zeros(G_g)
     if "(n,total)" in cross_sections:
         data = cross_sections["(n,total)"]
         for entry in data:
@@ -58,7 +57,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_t[G_n + G_g - g - 1] += v
-            g_sig_t[G_g - g -1] += v
     
     # ================================= Combine Heating Cross-Sections
     sig_heat = np.zeros(G)

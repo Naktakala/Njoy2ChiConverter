@@ -27,8 +27,8 @@ def convert_spectrum(spectrum):
     return bndrys, vals
 
 def ReadMcnpFile(output_filename):
-    #tally_lists = ['4', '24', '6', '26']
-    tally_lists = ['4', '24', '6', '26', '104', '204', '106', '206']
+    #tally_lists = ['4', '24', '6', '26', '104', '204', '106', '206']
+    tally_lists = ['24','26','204','206']
 
     with open(output_filename, "r") as fileHandler:
         tally = [] 

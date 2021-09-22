@@ -109,7 +109,7 @@ def InfiniteMediumSpectrum(data, source_def, path, plot=False):
     for i in range (len(src_term)):
       index = i + len(neutron_gs)
       v_src[index] = src_term[i]
-
+  print(v_src)
   v_psi = np.matmul(A_inv,v_src)
   # print("Norm spectrum: ")
   # print(np.linalg.norm(v_psi))

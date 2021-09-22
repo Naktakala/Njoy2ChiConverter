@@ -9,7 +9,7 @@ Created on Fri Aug  6 11:38:48 2021
 
 import numpy as np
 
-def BuildCombinedData (chi_list, ratio):
+def BuildCombinedData (chi_list, ratio, N_density):
     # ==================== Check for valid ratio 
     ratio_array = np.asarray(ratio, dtype = float)
     print(np.isclose(np.sum(ratio_array), 1.0))
@@ -19,7 +19,6 @@ def BuildCombinedData (chi_list, ratio):
     data = {}
     
     cs_OverallList = []
-    #ratio = [79,21]
     neutron_gs = []
     gamma_gs = []
     for i in range (len(chi_list)):
@@ -96,7 +95,7 @@ def BuildCombinedData (chi_list, ratio):
                     for j in range (0,num_group):
                         value_line = cf.readline().split()
                         if value_line != []:
-                            cs_value2[j] += float(value_line[1])*ratio[i]
+                            cs_value2[j] += float(value_line[1])*ratio[i]*N_density[i]
             cf.close()
         
         cs_dict[cs_name.lower()] = cs_value2
@@ -151,7 +150,7 @@ def BuildCombinedData (chi_list, ratio):
                             g += 1
                         
                         #Replace values in transfer matrixes
-                        XS_value = float(moment_line[-1])*ratio[i]
+                        XS_value = float(moment_line[-1])*ratio[i]*N_density[i]
                         moment_index = int(moment_line[1])
                         group_index = int(moment_line[2])
                         nonzero_index = int(moment_line[3])

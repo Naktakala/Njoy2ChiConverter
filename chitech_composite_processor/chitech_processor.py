@@ -30,18 +30,17 @@ argparser.add_argument("--source_term",
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
                        action='store_true', required=False)
-argparser.add_argument("--molar_mass",
-                       help="The molar mass for the element or composite",
-                       type=float, required=True)
 
 # ====================================== Argument for composite
 argparser.add_argument("--composite_chi_output_filename",
                        help="List of output files produced by ChiTech for the composite separated by group structure with || in between each gs",
                        default="", required=True)
-argparser.add_argument("--composite_atomic_fraction",
+argparser.add_argument("--atomic_fraction",
                        help="List of the atomics fraction of all elements in the composite",
                        default="", required=True)
-
+argparser.add_argument("--atomic_density",
+                       help="List of the atomics density of all elements in the composite",
+                       default="", required=True)
 # ============================= Argument for MCNP
 argparser.add_argument("--mcnp",
                        help="If included, will produce plots of mcnp data",
@@ -58,10 +57,17 @@ args = argparser.parse_args()
 
 #Get atomic fraction
 atom_fraction=[]
-atom_fraction_string=args.composite_atomic_fraction.split(",")
+atom_fraction_string=args.atomic_fraction.split(",")
 print(atom_fraction_string)
 for i in atom_fraction_string:
     atom_fraction.append(float(i))
+
+#Get atomic density
+N_density=[]
+N_density_string=args.atomic_density.split(",")
+print(N_density_string)
+for i in N_density_string:
+    N_density.append(float(i))
 
 # ===================================== Combine disjoint data from ChiTech file
 big_data = []
@@ -72,7 +78,7 @@ for chi_gs in chitech_gs_list:
     print(composite_Chifilename)
     for i in range (len(composite_Chifilename)):
         composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
-    data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction)
+    data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction, N_density)
     big_data.append(data)
 
 # ===================================== Write cross-section
@@ -105,7 +111,6 @@ for data in big_data:
     big_processed_data.append(processed_data)
 
 # ===================================== Generate spectrum
-# FIXME: Check if this works with gamma-only problem later
 #================================== Get MCNP data if asked
 if args.mcnp:
     mcnp_output_complete_path = args.mcnp_path + args.mcnp_filename
@@ -114,5 +119,5 @@ else:
 
 if args.plot: 
     print("Plotting the Spectra")
-    Utils_ChiTechPlotter.PlotSpectra(big_processed_data, source_def, path=args.output_path, molar_mass=args.molar_mass, mcnp_filename=mcnp_output_complete_path)
+    Utils_ChiTechPlotter.PlotSpectra(big_processed_data, source_def, path=args.output_path, mcnp_filename=mcnp_output_complete_path)
 
