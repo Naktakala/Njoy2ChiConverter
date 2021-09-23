@@ -17,15 +17,33 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     neutn_gs = group_structures["neutron"] if "neutron" in group_structures else []
     gamma_gs = group_structures["gamma"] if "gamma" in group_structures else []
 
+    # ====================== Test ========== 
+    # ================ Get the type of problem
+    problem_description = []
+    problem_type = ""
+    if neutn_gs != []:
+        if gamma_gs != []:
+            problem_type = "Neutron + Gamma"
+        elif gamma_gs == []:
+            problem_type = "Neutron only"
+    elif gamma_gs != []:
+        problem_type = "Gamma only"
+    problem_description.append(problem_type)
+
     G_n = len(neutn_gs)
     G_g = len(gamma_gs)
     G = G_n + G_g
+
+    # =============== Get the group structure
+    problem_description.append(G_n)
+    problem_description.append(G_g)
+
+
 
     with_sab = False
 
     # ================================= Combine sig_t
     sig_t = np.zeros(G)
-
     if "(n,total)" in cross_sections:
         data = cross_sections["(n,total)"]
         for entry in data:
@@ -65,6 +83,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_el[G_n - g - 1] += v
+    
+    sig_coht = np.zeros(G_g)
+    if "(g,coherent)" in cross_sections:
+        data = cross_sections["(g,coherent)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_coht[G_g - g - 1] += v
 
     sig_inel = np.zeros(G)
     if "(n,inel)" in cross_sections:
@@ -73,6 +99,14 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_inel[G_n - g - 1] += v
+
+    sig_incoht = np.zeros(G_g)
+    if "(g,incoherent)" in cross_sections:
+        data = cross_sections["(g,incoherent)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_incoht[G_g - g - 1] += v
 
     sig_freegas = np.zeros(G)
     if "free_gas" in cross_sections:
@@ -109,6 +143,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                 g = entry[0]
                 v = entry[1]
                 sig_nxn[G_n - g - 1] += v
+
 
     # ================================= Inverse velocity term
     inv_v = np.zeros(G)
@@ -428,10 +463,30 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                         break  # from for g
 
     # Compute new sigma_t, sigma_a, sigma_s 
+    # FIXME: Ask Dr. Ragusa why ?
+    sig_s = np.sum(transfer_mats[0], axis = 1)
+    #Correction for gamma scattering
+    if G_g > 0:
+        if (len(sig_coht) > 0) and (len(sig_incoht) > 0):
+            for i in range (len(sig_coht)):
+                sig_s[G_n+i] = sig_coht[i] + sig_incoht[i]
+
+    #sig_t = sig_a + sig_s
     ### This is to correct the total due to across-particule-type transfers
     sig_a = sig_t - sig_el - sig_inel
-    sig_s = np.sum(transfer_mats[0], axis = 1)
-    sig_t = sig_a + sig_s
+    #Correction for gamma absorption
+    if G_g > 0:
+        sig_pairprod = np.zeros(G_g)
+        if "(g,pair_production)" in cross_sections:
+            data = cross_sections["(g,pair_production)"]
+            for entry in data:
+                g = entry[0]
+                v = entry[1]
+                sig_pairprod[G_g - g - 1] += v
+        
+        for i in range (len(sig_pairprod)):
+            sig_a[G_n + i] = sig_t[G_n + i] - sig_s[G_n + i] - sig_pairprod[i]
+            
     #
     sig_sab = sig_el_sab + sig_inel_sab
 
@@ -476,48 +531,49 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
 
     # ===== Plot the matrix
     if plot:
-        Atest = np.copy(transfer_mats[0])
-        nz = np.nonzero(Atest)
-        Atest[nz] = np.log10(Atest[nz]) + 10.0
+        if neutn_gs != []:
+            Atest = np.copy(transfer_mats[0])
+            nz = np.nonzero(Atest)
+            Atest[nz] = np.log10(Atest[nz]) + 10.0
 
-        plt.figure(figsize = (6, 6))
-        im = plt.imshow(Atest, cmap = cm.Greys)
-        plt.xticks(np.arange(0, G, 10), [str(g) for g in range(0, G, 10)])
-        plt.yticks(np.arange(0, G, 10), [str(g) for g in range(0, G, 10)])
-        plt.xlabel('Destination energy group')
-        plt.ylabel('Source energy group')
-        plt.gca().xaxis.set_ticks_position('top')
-        plt.gca().xaxis.set_label_position('top')
-        # plt.savefig("SERPENTTransferMatrix.png")
+            plt.figure(figsize = (6, 6))
+            im = plt.imshow(Atest, cmap = cm.Greys)
+            plt.xticks(np.arange(0, G, 10), [str(g) for g in range(0, G, 10)])
+            plt.yticks(np.arange(0, G, 10), [str(g) for g in range(0, G, 10)])
+            plt.xlabel('Destination energy group')
+            plt.ylabel('Source energy group')
+            plt.gca().xaxis.set_ticks_position('top')
+            plt.gca().xaxis.set_label_position('top')
+            # plt.savefig("SERPENTTransferMatrix.png")
 
-        # ================================== Build group structures
-        np_neutn_gs = np.matrix(neutn_gs)
-        nbin_lo = np_neutn_gs[:, 1]
-        nbin_hi = np_neutn_gs[:, 2]
-        nbin_center = (0.5 * (nbin_lo + nbin_hi))[::-1]
+            # ================================== Build group structures
+            np_neutn_gs = np.matrix(neutn_gs)
+            nbin_lo = np_neutn_gs[:, 1]
+            nbin_hi = np_neutn_gs[:, 2]
+            nbin_center = (0.5 * (nbin_lo + nbin_hi))[::-1]
 
-        # ================================== Plot Cross sections
-        fig, ax = plt.subplots(ncols = 2, figsize = (6, 6))
-        ax[0].semilogx(nbin_center, sig_t, label = r"$\sigma_t$")
-        ax[0].semilogx(nbin_center, sig_a, label = r"$\sigma_a$")
-        ax[0].semilogx(nbin_center, sig_s, label = r"$\sigma_s$")
-        ax[0].legend()
-        ax[0].grid(True)
+            # ================================== Plot Cross sections
+            fig, ax = plt.subplots(ncols = 2, figsize = (6, 6))
+            ax[0].semilogx(nbin_center, sig_t, label = r"$\sigma_t$")
+            ax[0].semilogx(nbin_center, sig_a, label = r"$\sigma_a$")
+            ax[0].semilogx(nbin_center, sig_s, label = r"$\sigma_s$")
+            ax[0].legend()
+            ax[0].grid(True)
 
-        # ================================== Plot scattering
-        ax[1].semilogx(nbin_center, sig_s, label = r"$\sigma_s$")
-        ax[1].semilogx(nbin_center, sig_el, label = r"$\sigma_s$ elastic")
-        ax[1].semilogx(nbin_center, sig_inel, label = r"$\sigma_s$ inelastic")
-        if not with_sab:
-            ax[1].semilogx(nbin_center, sig_freegas, label = r"$\sigma_s$ freegas")
-        else:
-            ax[1].semilogx(nbin_center, sig_sab, label = r"$\sigma_s$ total SAB")
-            ax[1].semilogx(nbin_center, sig_el_sab, label = r"$\sigma_s$ elastic SAB")
-            ax[1].semilogx(nbin_center, sig_inel_sab, label = r"$\sigma_s$ inelastic SAB")
-        ax[1].legend()
-        ax[1].grid(True)
+            # ================================== Plot scattering
+            ax[1].semilogx(nbin_center, sig_s, label = r"$\sigma_s$")
+            ax[1].semilogx(nbin_center, sig_el, label = r"$\sigma_s$ elastic")
+            ax[1].semilogx(nbin_center, sig_inel, label = r"$\sigma_s$ inelastic")
+            if not with_sab:
+                ax[1].semilogx(nbin_center, sig_freegas, label = r"$\sigma_s$ freegas")
+            else:
+                ax[1].semilogx(nbin_center, sig_sab, label = r"$\sigma_s$ total SAB")
+                ax[1].semilogx(nbin_center, sig_el_sab, label = r"$\sigma_s$ elastic SAB")
+                ax[1].semilogx(nbin_center, sig_inel_sab, label = r"$\sigma_s$ inelastic SAB")
+            ax[1].legend()
+            ax[1].grid(True)
 
-        plt.show()
+            plt.show()
 
     # ================================== Build return data
     return_data = {"neutron_gs": neutn_gs,
@@ -543,4 +599,4 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                    "inv_velocity": inv_v,
                    "transfer_matrices": transfer_mats,
                    "transfer_matrices_sparsity": transfer_mats_nonzeros}
-    return return_data
+    return return_data, problem_description

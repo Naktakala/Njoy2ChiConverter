@@ -246,8 +246,8 @@ if not os.path.isdir(args.output_directory):
     print("Error: Value passed to --output_directory does not point to "
           "an existing folder")
 
-if (args.path_to_neutron_endf == "") and (args.path_to_gamma_endf ==""):
-  Raise ValueError ("Both path to endf file are not provided") 
+if ((args.path_to_neutron_endf == "") and (args.path_to_gamma_endf =="")):
+  raise ValueError("Both path to endf file are not provided") 
 
 # ===================================== Tape reservations
 # The following tape numbers are used:

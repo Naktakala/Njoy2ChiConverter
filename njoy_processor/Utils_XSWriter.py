@@ -3,9 +3,26 @@ import numpy as np
 
 
 # ===================================================================
-def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
-    cf = open(chi_filename, 'w')
+def WriteChiTechFile(data, problem_description, chi_directory = "output/", comment = "# Output"):
+    #============================== Testing ====================
+    isotope = problem_description[0]
+    problem_type = problem_description[1]
+    n_group = problem_description[2]
+    g_group = problem_description[3]
 
+    chi_filename = isotope + "_" + "n" + str(n_group) + "g" + str(g_group) + ".csx"
+    chi_path = chi_directory + chi_filename
+    print("Creating chi-cross-section in file path " + chi_path)
+    cf = open(chi_path, 'w')
+
+    cf.write("=================== Problem Description =============" + "\n")
+    cf.write("Isotope: " + isotope + "\n")
+    cf.write("Problem type: "  + problem_type + "\n")
+    cf.write("Neutron group structure: " + str(n_group) + " groups \n")
+    cf.write("Gamma group structure: " + str(g_group) + " groups \n")
+    cf.write("\n")
+
+    #============================
     sig_t = data["sigma_t"]
     sig_a = data["sigma_a"]
     sig_s = data["sigma_s"]
@@ -19,8 +36,12 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
     decay_const = data["decay_constants"]
     gamma = data["gamma"]
     ddt_coeff = data["inv_velocity"]
+
     transfer_mats = data["transfer_matrices"]
     transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
+
+    neutron_gs = data["neutron_gs"]
+    gamma_gs = data["gamma_gs"] 
 
     G = np.size(sig_t)
     M = len(transfer_mats)
@@ -31,8 +52,27 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
     cf.write("NUM_MOMENTS " + str(M) + "\n")
     if J > 0:
         cf.write("NUM_PRECURSORS " + str(J) + "\n")
-
     cf.write("\n")
+
+    if neutron_gs != []:
+        print(n_group, len(neutron_gs))
+        cf.write("NEUTRON_GS_BEGIN" + "\n")
+        for n in range(0, n_group):
+            cf.write("{:<4d}".format(n) + " ")
+            cf.write("{:<8g}".format(neutron_gs[n][1]) + " ")
+            cf.write("{:<g}".format(neutron_gs[n][2]) + " ")
+            cf.write("\n")
+        cf.write("NEUTRON_GS_END" + "\n\n")
+
+    if gamma_gs != []:
+        print(g_group, len(gamma_gs))
+        cf.write("GAMMA_GS_BEGIN" + "\n")
+        for g in range(0, g_group):
+            cf.write("{:<4d}".format(g) + " ")
+            cf.write("{:<8g}".format(gamma_gs[g][1]) + " ")
+            cf.write("{:<g}".format(gamma_gs[g][2]) + " ")
+            cf.write("\n")
+        cf.write("GAMMA_GS_END" + "\n\n")
 
     cf.write("SIGMA_T_BEGIN" + "\n")
     for g in range(0, G):
