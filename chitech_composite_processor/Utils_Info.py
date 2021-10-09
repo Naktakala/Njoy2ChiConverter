@@ -1,6 +1,6 @@
 import numpy as np 
 import matplotlib.pyplot as plt
-
+import Histogram_Source as Histo
 #====================================================================
 def GenerateSpectrumData(neutron_gs, psi, sigma_heat, gamma_gs=[]):
   G_neutron = len(neutron_gs)
@@ -98,18 +98,33 @@ def InfiniteMediumSpectrum(data, source_def, path, plot=False):
   # Get the source description
   particle = source_def["Particle type"].lower()
   energy_bin = source_def["Energy value"]
-  if_fission = source_def["If fission"]
-  # Get the source term:
-  if particle == "neutron":
-    src_term = create_source_spectrum(neutron_gs, energy_bin, fission = if_fission)
-    for i in range (len(src_term)):
-      v_src[i] = src_term[i]
-  elif particle == "gamma":
-    src_term = create_source_spectrum(gamma_gs, energy_bin, fission = if_fission)
-    for i in range (len(src_term)):
-      index = i + len(neutron_gs)
-      v_src[index] = src_term[i]
-  print(v_src)
+  if energy_bin == "Histogram":
+    if particle == "neutron":
+      source_gs = neutron_gs
+    elif particle == "gamma":
+      source_gs = gamma_gs
+    source_list = []
+    for i in range (len(source_gs)):
+      source_list.append(source_gs[i][1]/1e6)
+      if i == (len(source_gs) - 1):
+        source_list.append(source_gs[i][2]/1e6)
+    mcnp_histo_source = "../MCNP/W_Plate/DTRA_Tungsten_PointSource_v2.out"
+    v_src = Histo.Source_list(mcnp_histo_source, source_list)
+    
+  else:
+    energy_bin = float(energy_bin)
+    if_fission = source_def["If fission"]
+    # Get the source term:
+    if particle == "neutron":
+      src_term = create_source_spectrum(neutron_gs, energy_bin, fission = if_fission)
+      for i in range (len(src_term)):
+        v_src[i] = src_term[i]
+    elif particle == "gamma":
+      src_term = create_source_spectrum(gamma_gs, energy_bin, fission = if_fission)
+      for i in range (len(src_term)):
+        index = i + len(neutron_gs)
+        v_src[index] = src_term[i]
+    print(v_src)
   v_psi = np.matmul(A_inv,v_src)
   # print("Norm spectrum: ")
   # print(np.linalg.norm(v_psi))
