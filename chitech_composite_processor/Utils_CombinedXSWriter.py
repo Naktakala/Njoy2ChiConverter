@@ -20,24 +20,26 @@ def WriteCombinedChiTechFile(combined_data, chi_filename, comment = "# Output"):
             if (key == 'neutron_gs'):
                 neutron_gs = combined_data[key]
                 print(len(neutron_gs))
+                neutron_gs = np.flip(neutron_gs)
                 if neutron_gs != [] :
                     cf.write("NEUTRON_GS_BEGIN" + "\n")
                     for n in range(0, len(neutron_gs)):
                         cf.write("{:<4d}".format(n) + " ")
                         cf.write("{:<8g}".format(neutron_gs[n][1]) + " ")
-                        cf.write("{:<g}".format(neutron_gs[n][2]) + " ")
+                        cf.write("{:<g}".format(neutron_gs[n][0]) + " ")
                         cf.write("\n")
                     cf.write("NEUTRON_GS_END" + "\n\n")
             
             elif (key == 'gamma_gs'):
                 gamma_gs = combined_data[key]
+                gamma_gs = np.flip(gamma_gs)
                 print(len(gamma_gs))
                 if gamma_gs != []:
                     cf.write("GAMMA_GS_BEGIN" + "\n")
                     for g in range(0, len(gamma_gs)):
                         cf.write("{:<4d}".format(g) + " ")
                         cf.write("{:<8g}".format(gamma_gs[g][1]) + " ")
-                        cf.write("{:<g}".format(gamma_gs[g][2]) + " ")
+                        cf.write("{:<g}".format(gamma_gs[g][0]) + " ")
                         cf.write("\n")
                     cf.write("GAMMA_GS_END" + "\n\n")
                 
