@@ -56,6 +56,7 @@ def WriteChiTechFile(data, problem_description, chi_directory = "output/", comme
 
     if neutron_gs != []:
         print(n_group, len(neutron_gs))
+        neutron_gs = np.flip(neutron_gs)
         cf.write("NEUTRON_GS_BEGIN" + "\n")
         for n in range(0, n_group):
             cf.write("{:<4d}".format(n) + " ")
@@ -66,6 +67,7 @@ def WriteChiTechFile(data, problem_description, chi_directory = "output/", comme
 
     if gamma_gs != []:
         print(g_group, len(gamma_gs))
+        gamma_gs = np.flip(gamma_gs)
         cf.write("GAMMA_GS_BEGIN" + "\n")
         for g in range(0, g_group):
             cf.write("{:<4d}".format(g) + " ")

@@ -26,10 +26,8 @@ def convert_spectrum(spectrum):
     vals = np.array(vals)
     return bndrys, vals
 
-def ReadMcnpFile(output_filename):
+def ReadMcnpFile(output_filename, tally_lists):
     #tally_lists = ['4', '24', '6', '26', '104', '204', '106', '206']
-    tally_lists = ['24','26','204','206']
-
     with open(output_filename, "r") as fileHandler:
         tally = [] 
         for line in fileHandler:

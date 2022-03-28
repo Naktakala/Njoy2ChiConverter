@@ -93,7 +93,7 @@ source_def={}
 source_string=args.source_term.split(",")
 print(source_string)
 source_def["Particle type"] = source_string[0]
-source_def["Energy value"] = float(source_string[1])
+source_def["Energy value"] = source_string[1]
 if len(source_string) > 2:
     source_def["If fission"] = True
 else:

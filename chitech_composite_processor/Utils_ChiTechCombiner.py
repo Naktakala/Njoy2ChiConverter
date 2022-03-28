@@ -73,7 +73,10 @@ def BuildCombinedData (chi_list, ratio, N_density):
         cs_OverallList.append(cross_section)
         cf.close() 
     
-    
+    # Flip the neuton and gamma gs 
+    neutron_gs = np.flip(neutron_gs)
+    gamma_gs = np.flip(gamma_gs)
+
     data["G"] = num_group
     data["M"] = num_moment
     

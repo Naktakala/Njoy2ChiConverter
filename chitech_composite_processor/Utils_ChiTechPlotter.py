@@ -12,8 +12,9 @@ def PlotSpectra(big_processed_data, source, path, mcnp_filename = ""):
   #========================== Check for type of plots ==================#
   #from dtra_n_g_mcnp_post_process import n_spectrum
   if (mcnp_filename != ""):
-    tally, tally_dict, atom_density, gram_density = mcnp_reader.ReadMcnpFile(mcnp_filename)
-    print("Gram density = %.f"%(gram_density))
+    tally_lists = ['24','26','214','216']
+    tally, tally_dict, atom_density, gram_density = mcnp_reader.ReadMcnpFile(mcnp_filename, tally_lists)
+    print("Gram density = %.4f g/cc"%(gram_density))
     for particle_type in tally_dict.keys():
       for reaction_type in tally_dict[particle_type]:
         if len(tally_dict[particle_type][reaction_type]) > 0:
@@ -54,17 +55,19 @@ def PlotSpectra(big_processed_data, source, path, mcnp_filename = ""):
 
                 if reaction_type == "Flux":
                   #If flux
+                  #Flx = [i*pow(10,12) for i in Flx]
                   Flx = [i*pow(10,12) for i in Flx]
                 elif reaction_type == "Heating":
                     #If heating:
+                  #Flx = [i*pow(10,18)*gram_density for i in Flx]
                   Flx = [i*pow(10,18)*gram_density for i in Flx]
                 # # Normalization
                 # max = np.max(Flx)
                 # Flx /= max
-
+            #G = len(list(set(E)))
             #Start plotting
             ax = fig.add_subplot(row,col,r+1)
-            ax.plot(E, Flx, lw=lw, linewidth = 2, label = "$MCNP_{187}$")
+            ax.plot(E, Flx, lw=lw, linewidth = 2, label = "$MCNP_{48}$")
             #Get Njoy data
             for outp in big_processed_data:
               # If deals with neutrons 
@@ -76,8 +79,12 @@ def PlotSpectra(big_processed_data, source, path, mcnp_filename = ""):
               gamma_heating_spectrum = outp[2][1]
 
               #Get the group structure
-              G_n = len(list(set(neutron_group_bndries))) - 1
-              G_g = len(list(set(gamma_group_bndries))) - 1
+              G_n = len(list(set(neutron_group_bndries)))
+              G_g = len(list(set(gamma_group_bndries)))
+              if G_n > 0: 
+                G_n -= 1
+              if G_g > 0:
+                G_g -= 1
 
               if particle_type == "Neutron":
                 # If deals with flux:
@@ -102,23 +109,24 @@ def PlotSpectra(big_processed_data, source, path, mcnp_filename = ""):
                 # max = np.max(Sn_Flx)
                 # Sn_Flx /= max
                     
-              ax.plot(Sn_E, Sn_Flx, lw=lw, label = "$NJOY_{n%.dg%.d}$"%(G_n, G_g))
+              ax.plot(Sn_E, Sn_Flx, lw=lw,linewidth = 1.5, label = "$NJOY_{n%.dg%.d}$"%(G_n, G_g), color ='r')
             #ax.plot(E, Flx, lw=lw, label = "$MCNP_{%.d}$"%(G_n), color = 'y')
 
-            ax.set_xlim(right = 7)
-            if reaction_type == 'Heating':
-              ax.set_ylim(bottom = 1e5)
-            else:
-              ax.set_ylim(bottom = 1e-1)
+            #ax.set_xlim(right = 1.2e1)
+            # if reaction_type == 'Heating':
+            #   ax.set_ylim(bottom = 10e3)
+            # else:
+            #   ax.set_ylim(bottom = 10e1)
 
-            if float(tally_name) > 100:
+            if float(tally_name) > 210:
               ax.set_title("Fine MCNP GS", fontsize=11)
             else:
               ax.set_title("Coarse MCNP GS", fontsize=11)
             ax.set_yscale('log')
+            ax.set_xscale('log')
             plt.xticks(fontsize=8)
             plt.yticks(fontsize=8)
-
+            plt.grid()
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.xaxis.set_ticks_position('bottom')
@@ -139,7 +147,7 @@ def PlotSpectra(big_processed_data, source, path, mcnp_filename = ""):
                     label_list.append(label)
           plt.legend(handle_list, label_list, loc = 0)
           fig.subplots_adjust(wspace=0.585, hspace=0.485, right = 0.994, left = 0.12, top = 0.90, bottom = 0.1)
-          plt.savefig(path + '/' + particle_type + '_' + reaction_type + '_Histogram'+ '.png')
+          plt.savefig(path + '/' + particle_type + '_' + reaction_type + '_SpectraSource_Histogram'+ '.png')
 
   else:
     for outp in big_processed_data:
@@ -152,8 +160,12 @@ def PlotSpectra(big_processed_data, source, path, mcnp_filename = ""):
       gamma_heating_spectrum = outp[2][1]
 
       #Get the group structure
-      G_n = len(list(set(neutron_group_bndries))) - 1
-      G_g = len(list(set(gamma_group_bndries))) - 1
+      G_n = len(list(set(neutron_group_bndries)))
+      G_g = len(list(set(gamma_group_bndries)))
+      if G_n > 0: 
+        G_n -= 1
+      if G_g > 0:
+        G_g -= 1
 
       if (neutron_spectrum != []):
         #================================= Plot energy spectrum
