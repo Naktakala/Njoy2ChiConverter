@@ -246,9 +246,6 @@ if not os.path.isdir(args.output_directory):
     print("Error: Value passed to --output_directory does not point to "
           "an existing folder")
 
-if ((args.path_to_neutron_endf == "") and (args.path_to_gamma_endf =="")):
-  raise ValueError("Both path to endf file are not provided") 
-
 # ===================================== Tape reservations
 # The following tape numbers are used:
 # neutron endf        20
@@ -275,7 +272,9 @@ if args.path_to_neutron_endf != "":
     print("Neutron only Problem")
 elif args.path_to_gamma_endf != "":
   print("Gamma only Problem")
-  
+else:
+  raise ValueError("Either a neutron or a gamma ENDF must be provided") 
+
 # ===================================== Develop input tapes
 if args.path_to_neutron_endf != "":
   os.system("ln -fs "+args.path_to_neutron_endf+" tape20")
@@ -318,34 +317,34 @@ if args.path_to_neutron_endf != "":
 material_number_gamma = 0
 if args.path_to_gamma_endf != "":
   os.system("ln -fs "+args.path_to_gamma_endf+" tape52")
-  gamma_file = open("tape52", "r")
-  gamma_file.readline()    # skip line
-  gamma_file.readline()    # skip line
-  gamma_file.readline()    # skip line
-  gamma_file.readline()    # skip line
-  gamma_file.readline()    # skip line
-  gamma_file.readline()    # skip line
-  gamma_file.readline()    # skip line
-  gamma_file.readline(11)  # skip field
-  gamma_file.readline(11)  # skip field
+  endf_gamma_file = open("tape52", "r")
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline()    # skip line
+  endf_gamma_file.readline(11)  # skip field
+  endf_gamma_file.readline(11)  # skip field
 
-  material_number_gamma = int(gamma_file.readline(22)[9:])
+  material_number_gamma = int(endf_gamma_file.readline(22)[9:])
 
   print("gamma material number read: "+str(material_number_gamma))
   
-  gamma_file.close()
+  endf_gamma_file.close()
   
   # ============== Only do for gamma only problem ==========
   if args.path_to_neutron_endf =="":
     os.system("ln -fs "+args.path_to_gamma_endf+" tape52")
-    gamma_file = open("tape52", "r")
-    gamma_file.readline()    # skip line
-    gamma_file.readline()    # skip line
-    gamma_file.readline()    # skip line
-    gamma_file.readline()    # skip line
-    gamma_file.readline()    # skip line
+    endf_gamma_file = open("tape52", "r")
+    endf_gamma_file.readline()    # skip line
+    endf_gamma_file.readline()    # skip line
+    endf_gamma_file.readline()    # skip line
+    endf_gamma_file.readline()    # skip line
+    endf_gamma_file.readline()    # skip line
     
-    isotope_text = gamma_file.readline(11); gamma_file.readline()
+    isotope_text = endf_gamma_file.readline(11); endf_gamma_file.readline()
     isotope_atomic_number = int(isotope_text[0:3])
     isotope_symbol        = isotope_text[4:6].strip()
     isotope_mass_number   = int(isotope_text[7:10])
@@ -355,7 +354,7 @@ if args.path_to_gamma_endf != "":
       output_filename = isotope_symbol + str(isotope_mass_number) + \
                           isotope_metastable+".txt"
     
-    gamma_file.close()
+    endf_gamma_file.close()
 
 # ===================================== Extract information from S(a,b) file
 #                                       if required
@@ -386,7 +385,7 @@ if args.path_to_sab != "":
 njoy_input = open("NJOY_INPUT.txt", "w")
 njoy_input.write("-- Processing ENDF to PENDF\n")
 
-# =============================== Neutron dependent input
+# =============================== Neutron-dependent input
 if args.path_to_neutron_endf != "":
 
   njoy_input.write("moder\n")
@@ -432,7 +431,7 @@ if args.path_to_neutron_endf != "":
   njoy_input.write(str(args.temperature)+"/\n") 
   njoy_input.write("0.005 5.0/\n")   
 
-# ==================================== Gamma Dependent Input
+# ==================================== Gamma-dependent Input
 if args.path_to_gamma_endf != "":
   njoy_input.write("moder\n")
   njoy_input.write("52 -53/\n")
@@ -593,3 +592,5 @@ if not os.path.isdir(args.output_directory):
 print("Copying outputfile to "+args.output_directory+output_filename)
 
 os.system("cp output "+args.output_directory+output_filename)
+os.system("pwd")
+os.system("cp NJOY_INPUT.txt "+args.output_directory+"NJOY_INPUT.txt")
