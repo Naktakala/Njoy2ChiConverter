@@ -53,9 +53,9 @@ print('\n\n Problem description =\n',problem_description,'\n\n')
 # ===================================== Write cross-section
 if len(args.chixs_filename)==0:
     # generate name automatically
-    chi_filename = args.njoy_output_filename + ".csx"
+    chixs_filename = args.njoy_output_filename + ".csx"
 else:
-    chi_filename = args.chi_filename + ".csx"
+    chixs_filename = args.chixs_filename + ".csx"
    
 chi_output_complete_path = args.output_path + "/"  + chixs_filename
 print("Creating chi-cross-section in file " + chi_output_complete_path)
