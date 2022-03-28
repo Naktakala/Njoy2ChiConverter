@@ -17,30 +17,28 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     neutn_gs = group_structures["neutron"] if "neutron" in group_structures else []
     gamma_gs = group_structures["gamma"] if "gamma" in group_structures else []
 
-    # ====================== Test ========== 
-    # ================ Get the type of problem
-    problem_description = []
-    problem_type = ""
-    if neutn_gs != []:
-        if gamma_gs != []:
-            problem_type = "Neutron + Gamma"
-        elif gamma_gs == []:
-            problem_type = "Neutron only"
-    elif gamma_gs != []:
-        problem_type = "Gamma only"
-    problem_description.append(problem_type)
-
     G_n = len(neutn_gs)
     G_g = len(gamma_gs)
     G = G_n + G_g
 
-    # =============== Get the group structure
-    problem_description.append(G_n)
-    problem_description.append(G_g)
-
-
-
     with_sab = False
+
+    # ================ Get a description of the problem
+    problem_description = {}
+    if neutn_gs != []:
+        if gamma_gs != []:
+            problem_description['problem_type'] = "Neutron + Gamma"
+        elif gamma_gs == []:
+            problem_description['problem_type'] = "Neutron only"
+    elif gamma_gs != []:
+        problem_description['problem_type'] = "Gamma only"
+    else:
+        problem_description['problem_type'] ="Unknown"
+        print(problem_description)
+        raise Exception('unknown particle type')
+    
+    problem_description['G_g'] = G_n
+    problem_description['G_g'] = G_g
 
     # ================================= Combine sig_t
     sig_t = np.zeros(G)
@@ -84,14 +82,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             v = entry[1]
             sig_el[G_n - g - 1] += v
     
-    sig_coht = np.zeros(G_g)
-    if "(g,coherent)" in cross_sections:
-        data = cross_sections["(g,coherent)"]
-        for entry in data:
-            g = entry[0]
-            v = entry[1]
-            sig_coht[G_g - g - 1] += v
-
     sig_inel = np.zeros(G)
     if "(n,inel)" in cross_sections:
         data = cross_sections["(n,inel)"]
@@ -99,14 +89,6 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             g = entry[0]
             v = entry[1]
             sig_inel[G_n - g - 1] += v
-
-    sig_incoht = np.zeros(G_g)
-    if "(g,incoherent)" in cross_sections:
-        data = cross_sections["(g,incoherent)"]
-        for entry in data:
-            g = entry[0]
-            v = entry[1]
-            sig_incoht[G_g - g - 1] += v
 
     sig_freegas = np.zeros(G)
     if "free_gas" in cross_sections:
@@ -143,6 +125,22 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
                 g = entry[0]
                 v = entry[1]
                 sig_nxn[G_n - g - 1] += v
+
+    sig_coht = np.zeros(G_g)
+    if "(g,coherent)" in cross_sections:
+        data = cross_sections["(g,coherent)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_coht[G_g - g - 1] += v
+
+    sig_incoht = np.zeros(G_g)
+    if "(g,incoherent)" in cross_sections:
+        data = cross_sections["(g,incoherent)"]
+        for entry in data:
+            g = entry[0]
+            v = entry[1]
+            sig_incoht[G_g - g - 1] += v
 
 
     # ================================= Inverse velocity term
@@ -469,12 +467,15 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
     if G_g > 0:
         if (len(sig_coht) > 0) and (len(sig_incoht) > 0):
             for i in range (len(sig_coht)):
-                sig_s[G_n+i] = sig_coht[i] + sig_incoht[i]
+                sig_s[G_n + i] = sig_coht[i] + sig_incoht[i]
 
     #sig_t = sig_a + sig_s
     ### This is to correct the total due to across-particule-type transfers
+    # aat this stage, sig_t, sig_el, and sig_inel only contains within-particle interactions
+    # thus sig_a is only the within-particle absorption
     sig_a = sig_t - sig_el - sig_inel
-    #Correction for gamma absorption
+    
+    # Correction for gamma absorption
     if G_g > 0:
         sig_pairprod = np.zeros(G_g)
         if "(g,pair_production)" in cross_sections:
@@ -544,7 +545,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             plt.ylabel('Source energy group')
             plt.gca().xaxis.set_ticks_position('top')
             plt.gca().xaxis.set_label_position('top')
-            # plt.savefig("SERPENTTransferMatrix.png")
+            plt.savefig("TransferMatrix_NJOY.png")
 
             # ================================== Build group structures
             np_neutn_gs = np.matrix(neutn_gs)
@@ -574,6 +575,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             ax[1].grid(True)
 
             plt.show()
+            plt.savefig("CrossSections_NJOY.png")
 
     # ================================== Build return data
     return_data = {"neutron_gs": neutn_gs,

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #======================================= Plot the spectra
-def Njoy_plotter(outp, path):
+def Njoy_spectrum_plotter(outp, path):
     neutron_group_bndries = outp[0][0]
     neutron_spectrum = outp[0][1]
     gamma_group_bndries = outp[1][0]
