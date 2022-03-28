@@ -592,5 +592,5 @@ if not os.path.isdir(args.output_directory):
 print("Copying outputfile to "+args.output_directory+output_filename)
 
 os.system("cp output "+args.output_directory+output_filename)
-os.system("pwd")
-os.system("cp NJOY_INPUT.txt "+args.output_directory+"NJOY_INPUT.txt")
+# os.system("pwd")
+# os.system("cp NJOY_INPUT.txt "+args.output_directory+"NJOY_INPUT.txt")
