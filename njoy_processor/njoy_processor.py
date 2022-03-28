@@ -58,7 +58,7 @@ else:
     chixs_filename = args.chixs_filename
    
 chi_output_complete_path = args.output_path + "/"  + chixs_filename
-print("Creating chi-cross-section in file " + chi_output_complete_path)
+print("Creating chi cross section in file " + chi_output_complete_path)
 Utils_XSWriter.WriteChiTechFile(data, chi_output_complete_path, problem_description)
 
 # Get the source definition
