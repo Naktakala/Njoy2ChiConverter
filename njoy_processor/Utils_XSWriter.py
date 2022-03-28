@@ -8,15 +8,15 @@ def WriteChiTechFile(data, chi_full_path, problem_description):
 
     cf = open(chi_full_path, 'w')
 
-    cf.write("=================== Problem Description =============" + "\n")
+    cf.write("#=================== Problem Description =============" + "\n")
     n_group = problem_description['G_n']
     g_group = problem_description['G_g']
-    cf.write("Isotope: " + problem_description['isotope'] + "\n")
-    cf.write("Problem type: "  + problem_description['problem_type'] + "\n")
+    cf.write("# Isotope: " + problem_description['isotope'] + "\n")
+    cf.write("# Problem type: "  + problem_description['problem_type'] + "\n")
     if n_group>0:
-        cf.write("Neutron group structure: " + str(n_group) + " groups \n")
+        cf.write("# Neutron group structure: " + str(n_group) + " groups \n")
     if g_group>0:
-        cf.write("Gamma group structure: " + str(g_group) + " groups \n")
+        cf.write("# Gamma group structure: " + str(g_group) + " groups \n")
     cf.write("\n")
 
     #============================
