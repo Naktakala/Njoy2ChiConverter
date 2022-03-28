@@ -589,8 +589,12 @@ if not os.path.isdir(args.output_directory):
   print("Error: Value passed to --output_directory does not point to "
         "an existing folder")
 
-print("Copying outputfile to "+args.output_directory+output_filename)
+forward_slash = ""
+if args.output_directory[-1] != "/":
+  forward_slash = "/"
 
-os.system("cp output "+args.output_directory+output_filename)
+print("Copying outputfile to "+args.output_directory+forward_slash+output_filename)
+
+os.system("cp output "+args.output_directory+forward_slash+output_filename)
 # os.system("pwd")
 # os.system("cp NJOY_INPUT.txt "+args.output_directory+"NJOY_INPUT.txt")
