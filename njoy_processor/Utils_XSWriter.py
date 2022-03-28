@@ -3,23 +3,20 @@ import numpy as np
 
 
 # ===================================================================
-def WriteChiTechFile(data, problem_description, chi_directory = "output/", comment = "# Output"):
+def WriteChiTechFile(data, chi_full_path, problem_description = "# Output"):
     #============================== Testing ====================
-    isotope = problem_description[0]
-    problem_type = problem_description[1]
-    n_group = problem_description[2]
-    g_group = problem_description[3]
 
-    chi_filename = isotope + "_" + "n" + str(n_group) + "g" + str(g_group) + ".csx"
-    chi_path = chi_directory + chi_filename
-    print("Creating chi-cross-section in file path " + chi_path)
-    cf = open(chi_path, 'w')
+    cf = open(chi_full_path, 'w')
 
     cf.write("=================== Problem Description =============" + "\n")
-    cf.write("Isotope: " + isotope + "\n")
-    cf.write("Problem type: "  + problem_type + "\n")
-    cf.write("Neutron group structure: " + str(n_group) + " groups \n")
-    cf.write("Gamma group structure: " + str(g_group) + " groups \n")
+    n_group = problem_description['G_n']
+    g_group = problem_description['G_g']
+    cf.write("Isotope: " + problem_description['isotope'] + "\n")
+    cf.write("Problem type: "  + problem_description['problem_type'] + "\n")
+    if n_group>0:
+        cf.write("Neutron group structure: " + str(n_group) + " groups \n")
+    if g_group>0:
+        cf.write("Gamma group structure: " + str(g_group) + " groups \n")
     cf.write("\n")
 
     #============================
