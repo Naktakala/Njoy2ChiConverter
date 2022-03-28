@@ -55,7 +55,7 @@ if len(args.chixs_filename)==0:
     # generate name automatically
     chixs_filename = args.njoy_output_filename + ".csx"
 else:
-    chixs_filename = args.chixs_filename + ".csx"
+    chixs_filename = args.chixs_filename
    
 chi_output_complete_path = args.output_path + "/"  + chixs_filename
 print("Creating chi-cross-section in file " + chi_output_complete_path)
