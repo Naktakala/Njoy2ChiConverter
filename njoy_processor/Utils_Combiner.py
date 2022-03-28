@@ -37,7 +37,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         print(problem_description)
         raise Exception('unknown particle type')
     
-    problem_description['G_g'] = G_n
+    problem_description['G_n'] = G_n
     problem_description['G_g'] = G_g
 
     # ================================= Combine sig_t

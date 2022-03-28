@@ -51,7 +51,7 @@ data, problem_description = Utils_Combiner.BuildCombinedData(raw_njoy_data, plot
 # ====== Get the isotope and type of problem
 filename =  args.njoy_output_filename.split("_")
 problem_description['isotope'] = filename[0]
-print(problem_description)
+print('\n\n Problem description =\n',problem_description,'\n\n')
 
 chi_output_complete_path = args.output_path + "/"
 print("Creating chi-cross-section in file " + chi_output_complete_path)
