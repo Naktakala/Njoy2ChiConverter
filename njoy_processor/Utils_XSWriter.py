@@ -3,7 +3,7 @@ import numpy as np
 
 
 # ===================================================================
-def WriteChiTechFile(data, chi_full_path, problem_description = "# Output"):
+def WriteChiTechFile(data, chi_full_path, problem_description):
     #============================== Testing ====================
 
     cf = open(chi_full_path, 'w')
@@ -44,7 +44,7 @@ def WriteChiTechFile(data, chi_full_path, problem_description = "# Output"):
     M = len(transfer_mats)
     J = len(decay_const)
 
-    cf.write(comment + "\n")
+    cf.write("# Output" + "\n")
     cf.write("NUM_GROUPS " + str(G) + "\n")
     cf.write("NUM_MOMENTS " + str(M) + "\n")
     if J > 0:
