@@ -1,4 +1,4 @@
-'''Prepares input/output files for NJOY2016 and executes NJOY2016'''
+'''Prepares input/output files for NJOY2016 and executes NJOY2016/2021'''
 import sys 
 import argparse
 from argparse import RawTextHelpFormatter
