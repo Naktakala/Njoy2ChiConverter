@@ -67,10 +67,10 @@ Utils_XSWriter.WriteChiTechFile(data, chi_output_complete_path, problem_descript
 if args.plot:
     import os, glob
     filename =  chixs_filename.split(".")  
-    os.system('pwd')    
-    os.system('ls -lasrt')    
+    # os.system('pwd')    
+    # os.system('ls -lasrt')    
     for file in glob.glob("*.png"):
-        print(file)
+        # print(file)
         os.system("cp "+file+" "+args.output_path+forward_slash+filename[0]+"_"+file+".png")
 
 # ===================================== Done
