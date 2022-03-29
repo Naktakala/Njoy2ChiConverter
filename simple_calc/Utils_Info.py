@@ -74,7 +74,6 @@ def InfiniteMediumSpectrum(data, source_def, plot=False):
     T = np.diag(v_sig_t)
   
     if plot:
-        plt.figure()
         plt.matshow(np.log(S))
         if G_gamma>0:
             g_txt = '_g'+str(G_gamma)
