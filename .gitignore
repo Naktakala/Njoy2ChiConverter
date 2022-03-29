@@ -25,3 +25,5 @@ njoy_runner/NJOY_INPUT.txt
 
 *.csx
 *.njoy
+*.png
+output/testing/NJOY_INPUT.txt

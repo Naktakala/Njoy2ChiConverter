@@ -1,8 +1,8 @@
 """Executes the main steps of conversion"""
 import Utils_ChiTechCombiner
-import Utils_Info
 import Utils_CombinedXSWriter
-import Utils_ChiTechPlotter
+#import Utils_Info
+#import Utils_ChiTechPlotter
 
 import sys 
 import argparse
@@ -23,11 +23,6 @@ argparser.add_argument("--output_path",
 argparser.add_argument("--chixs_filename",
                        help="Name of Chi XS file",
                        default="", required=True)
-"""
-argparser.add_argument("--source_term",
-                       help="Description of the source term in string form: particle type, energy value in MeV and if fission is included, separated by a comma",
-                       default="", required=True)
-"""
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
                        action='store_true', required=False)
@@ -40,17 +35,6 @@ argparser.add_argument("--atomic_density",
                        help="List of the atomic densities",
                        default="", required=True)
 # ============================= Argument for MCNP
-"""
-argparser.add_argument("--mcnp",
-                       help="If included, will produce plots of mcnp data",
-                       action='store_true', required=False)
-argparser.add_argument("--mcnp_path",
-                       help="Complete path where the mcnp output is stored",
-                       default="", required=False)
-argparser.add_argument("--mcnp_filename",
-                       help="Name of output file produced by MCNP",
-                       default="", required=False)
-"""
 
 args = argparser.parse_args()    
 
@@ -83,6 +67,23 @@ data = Utils_ChiTechCombiner.BuildCombinedChiTechData(chixs_fullpath_list, N_den
 chi_output_complete_path = args.output_path + forward_slash + args.chixs_filename
 print("Creating chi-cross-section in file " + chi_output_complete_path)
 Utils_CombinedXSWriter.WriteCombinedChiTechFile(data, chi_output_complete_path)
+
+"""
+argparser.add_argument("--mcnp",
+                       help="If included, will produce plots of mcnp data",
+                       action='store_true', required=False)
+argparser.add_argument("--mcnp_path",
+                       help="Complete path where the mcnp output is stored",
+                       default="", required=False)
+argparser.add_argument("--mcnp_filename",
+                       help="Name of output file produced by MCNP",
+                       default="", required=False)
+"""
+"""
+argparser.add_argument("--source_term",
+                       help="Description of the source term in string form: particle type, energy value in MeV and if fission is included, separated by a comma",
+                       default="", required=True)
+"""
 
 """
 # ===================================== Create the source definition
