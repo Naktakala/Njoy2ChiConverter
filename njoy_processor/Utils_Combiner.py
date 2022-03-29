@@ -544,7 +544,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
         plt.ylabel('Source energy group')
         plt.gca().xaxis.set_ticks_position('top')
         plt.gca().xaxis.set_label_position('top')
-        plt.savefig("TransferMatrix-NJOY.png")
+        plt.savefig("TransferMatrix_NJOY.png")
 
         if neutn_gs != []:
             # ================================== Build group structures
@@ -575,7 +575,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             ax[1].grid(True)
 
             plt.show()
-            plt.savefig("CrossSections-n-NJOY.png")
+            plt.savefig("CrossSections_n_NJOY.png")
 
         if gamma_gs != []:
             # ================================== Build group structures
@@ -593,7 +593,7 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             plt.grid(True)
 
             plt.show()
-            plt.savefig("CrossSections-g-NJOY.png")
+            plt.savefig("CrossSections_g_NJOY.png")
 
     # ================================== Build return data
     return_data = {"neutron_gs": neutn_gs,

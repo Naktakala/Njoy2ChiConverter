@@ -70,9 +70,8 @@ if args.plot:
     # os.system('pwd')    
     # os.system('ls -lasrt')    
     for file in glob.glob("*.png"):
-        print(file)
-        print("cp "+file+" "+args.output_path+forward_slash+filename[0]+"_"+file+".png")
-        os.system("cp "+file+" "+args.output_path+forward_slash+filename[0]+"_"+file+".png")
+        #print(file)
+        os.system("mv "+file+" "+args.output_path+forward_slash+filename[0]+"_"+file)
 
 # ===================================== Done
 
