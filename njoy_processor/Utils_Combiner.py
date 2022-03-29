@@ -585,12 +585,12 @@ def BuildCombinedData(raw_njoy_data, plot = False, verbose = False):
             nbin_center = (0.5 * (nbin_lo + nbin_hi))[::-1]
 
             # ================================== Plot Cross sections
-            fig, ax = plt.subplots(ncols = 1, figsize = (6, 6))
-            ax[0].semilogx(nbin_center, sig_t[G_n:], label = r"$\sigma_t$")
-            ax[0].semilogx(nbin_center, sig_a[G_n:], label = r"$\sigma_a$")
-            ax[0].semilogx(nbin_center, sig_s[G_n:], label = r"$\sigma_s$")
-            ax[0].legend()
-            ax[0].grid(True)
+            plt.figure(figsize = (6, 6))
+            plt.semilogx(nbin_center, sig_t[G_n:], label = r"$\sigma_t$")
+            plt.semilogx(nbin_center, sig_a[G_n:], label = r"$\sigma_a$")
+            plt.semilogx(nbin_center, sig_s[G_n:], label = r"$\sigma_s$")
+            plt.legend()
+            plt.grid(True)
 
             plt.show()
             plt.savefig("CrossSections_g_NJOY.png")
