@@ -65,11 +65,13 @@ Utils_XSWriter.WriteChiTechFile(data, chi_output_complete_path, problem_descript
 
 # copy the plots
 if args.plot:
-    import os
+    import os, glob
     filename =  chixs_filename.split(".")  
     os.system('pwd')    
     os.system('ls -lasrt')    
-    os.system("cp *.png "+args.output_path+forward_slash+filename[0]+".png")
+    for file in glob.glob("*.png"):
+        print(file)
+    # os.system("cp *.png "+args.output_path+forward_slash+filename[0]+".png")
 
 # ===================================== Done
 
