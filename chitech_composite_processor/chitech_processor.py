@@ -23,9 +23,11 @@ argparser.add_argument("--output_path",
 argparser.add_argument("--chixs_filename",
                        help="Name of Chi XS file",
                        default="", required=True)
+"""
 argparser.add_argument("--source_term",
                        help="Description of the source term in string form: particle type, energy value in MeV and if fission is included, separated by a comma",
                        default="", required=True)
+"""
 argparser.add_argument("--plot",
                        help="If included, will produce xs plots",
                        action='store_true', required=False)
@@ -38,6 +40,7 @@ argparser.add_argument("--atomic_density",
                        help="List of the atomic densities",
                        default="", required=True)
 # ============================= Argument for MCNP
+"""
 argparser.add_argument("--mcnp",
                        help="If included, will produce plots of mcnp data",
                        action='store_true', required=False)
@@ -47,6 +50,7 @@ argparser.add_argument("--mcnp_path",
 argparser.add_argument("--mcnp_filename",
                        help="Name of output file produced by MCNP",
                        default="", required=False)
+"""
 
 args = argparser.parse_args()    
 
