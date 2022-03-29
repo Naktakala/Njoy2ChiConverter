@@ -3,7 +3,7 @@ import Utils_ChiTechCombiner
 import Utils_Info
 import Utils_CombinedXSWriter
 import Utils_ChiTechPlotter
-import Utils_Info
+
 import sys 
 import argparse
 
@@ -12,7 +12,6 @@ if sys.version_info[0] < 3:
     print("\n Error: This script requires python3 but was executed "
           "with version:\n\n"+sys.version+"\n")
     sys.exit(1)
-
 
 # ===================================== Setup arguments
 argparser = argparse.ArgumentParser(
@@ -32,14 +31,11 @@ argparser.add_argument("--plot",
                        action='store_true', required=False)
 
 # ====================================== Argument for composite
-argparser.add_argument("--composite_chi_output_filename",
-                       help="List of output files produced by ChiTech for the composite separated by group structure with || in between each gs",
-                       default="", required=True)
-argparser.add_argument("--atomic_fraction",
-                       help="List of the atomics fraction of all elements in the composite",
+argparser.add_argument("--chixs_filename_list",
+                       help="List of output files produced by ChiTech. Must use same gs",
                        default="", required=True)
 argparser.add_argument("--atomic_density",
-                       help="List of the atomics density of all elements in the composite",
+                       help="List of the atomic densities",
                        default="", required=True)
 # ============================= Argument for MCNP
 argparser.add_argument("--mcnp",
@@ -54,40 +50,37 @@ argparser.add_argument("--mcnp_filename",
 
 args = argparser.parse_args()    
 
-
-#Get atomic fraction
-atom_fraction=[]
-atom_fraction_string=args.atomic_fraction.split(",")
-print(atom_fraction_string)
-for i in atom_fraction_string:
-    atom_fraction.append(float(i))
-
-#Get atomic density
+forward_slash = ""
+if args.output_path[-1] != "/":
+    forward_slash = "/"
+    
+# Get atomic density
 N_density=[]
 N_density_string=args.atomic_density.split(",")
 print(N_density_string)
 for i in N_density_string:
     N_density.append(float(i))
 
-# ===================================== Combine disjoint data from ChiTech file
-big_data = []
-print("Combining disjoint data")
-chitech_gs_list = args.composite_chi_output_filename.split("||")
-for chi_gs in chitech_gs_list:
-    composite_Chifilename = chi_gs.split(",")
-    print(composite_Chifilename)
-    for i in range (len(composite_Chifilename)):
-        composite_Chifilename[i] = args.output_path + "/" + composite_Chifilename[i]
-    data = Utils_ChiTechCombiner.BuildCombinedData(composite_Chifilename, atom_fraction, N_density)
-    big_data.append(data)
+# ===================================== Combine data from ChiTech files
+print("Combining ChiTech data")
+chixs_filename_list = args.chixs_filename_list.split(",")
+if len(chixs_filename_list) != len(N_density):
+    raise ValueError('number of filenames inconsistent with at.density data')
 
-# ===================================== Write cross-section
-# FIXME: Possibly add an option for user to pick which group structure to write in chitech format
-chi_output_complete_path = args.output_path + "/" + args.chixs_filename
+chixs_fullpath_list = []
+for chixs_filename in chixs_filename_list:
+    print(chixs_filename)
+    chixs_fullpath_list.append(args.output_path + forward_slash + chixs_filename)
+
+data = Utils_ChiTechCombiner.BuildCombinedChiTechData(chixs_fullpath_list, N_density)
+
+# ===================================== Write cross section
+
+chi_output_complete_path = args.output_path + forward_slash + args.chixs_filename
 print("Creating chi-cross-section in file " + chi_output_complete_path)
-data = big_data[0]
-Utils_CombinedXSWriter.WriteCombinedChiTechFile(data, chi_output_complete_path, comment = "# Output")
+Utils_CombinedXSWriter.WriteCombinedChiTechFile(data, chi_output_complete_path)
 
+"""
 # ===================================== Create the source definition
 source_def={}
 source_string=args.source_term.split(",")
@@ -120,4 +113,4 @@ else:
 if args.plot: 
     print("Plotting the Spectra")
     Utils_ChiTechPlotter.PlotSpectra(big_processed_data, source_def, path=args.output_path, mcnp_filename=mcnp_output_complete_path)
-
+"""

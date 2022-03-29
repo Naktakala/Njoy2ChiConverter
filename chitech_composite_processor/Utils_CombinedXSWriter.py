@@ -2,7 +2,7 @@
 import numpy as np
 
 def WriteCombinedChiTechFile(combined_data, chi_filename, comment = "# Output"):
-    #Start writing the file
+    # Start writing the file
     num_group = combined_data['G']
     num_moment = combined_data['M']
     
@@ -20,7 +20,7 @@ def WriteCombinedChiTechFile(combined_data, chi_filename, comment = "# Output"):
             if (key == 'neutron_gs'):
                 neutron_gs = combined_data[key]
                 print(len(neutron_gs))
-                neutron_gs = np.flip(neutron_gs)
+                # neutron_gs = np.flip(neutron_gs)
                 if neutron_gs != [] :
                     cf.write("NEUTRON_GS_BEGIN" + "\n")
                     for n in range(0, len(neutron_gs)):
@@ -32,7 +32,7 @@ def WriteCombinedChiTechFile(combined_data, chi_filename, comment = "# Output"):
             
             elif (key == 'gamma_gs'):
                 gamma_gs = combined_data[key]
-                gamma_gs = np.flip(gamma_gs)
+                # gamma_gs = np.flip(gamma_gs)
                 print(len(gamma_gs))
                 if gamma_gs != []:
                     cf.write("GAMMA_GS_BEGIN" + "\n")
@@ -46,21 +46,22 @@ def WriteCombinedChiTechFile(combined_data, chi_filename, comment = "# Output"):
             elif (key == 'transfer_matrices'):
                 # ============= Start writing the transfer matrix
                 transfer_mats = combined_data[key]
-                transfer_mats_nonzeros = combined_data["transfer_matrices_sparsity"]
                 cf.write("TRANSFER_MOMENTS_BEGIN" + "\n")
                 for m in range (num_moment):
                     cf.write("# l = " + str(m) + "\n")
                     for gprime in range (num_group):
-                        for g in transfer_mats_nonzeros[m][gprime]:
-                            cf.write("M_GPRIME_G_VAL" + " ")
-                            cf.write("{:<4d}".format(m) + " ")
-                            cf.write("{:<4d}".format(gprime) + " ")
-                            cf.write("{:<4d}".format(g) + " ")
-                            cf.write("{:<g}".format(transfer_mats[m][gprime][g]))
+                        for g in range (num_group):
+                            xs_val = transfer_mats[m][gprime,g]
+                            if np.fabs(xs_val)>1e-99:
+                                cf.write("M_GPRIME_G_VAL" + " ")
+                                cf.write("{:<4d}".format(m) + " ")
+                                cf.write("{:<4d}".format(gprime) + " ")
+                                cf.write("{:<4d}".format(g) + " ")
+                                cf.write("{:<g}".format(xs_val))
                             cf.write("\n")
                 cf.write("TRANSFER_MOMENTS_END" + "\n\n")    
                 
-            elif (key != "transfer_matrices_sparsity"):
+            else:
                 #================  Start writing the cross_sections
                 cf.write(key.upper()+ "_BEGIN" + "\n")
                 for i in range(len(combined_data[key])):

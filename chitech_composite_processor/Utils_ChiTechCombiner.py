@@ -1,4 +1,4 @@
-"""Combined Chi-tech data from multiple files to form composite cross-sections"""
+"""Combined Chi-tech data from multiple files to form composite cross sections"""
 
 # -*- coding: utf-8 -*-
 """
@@ -9,12 +9,7 @@ Created on Fri Aug  6 11:38:48 2021
 
 import numpy as np
 
-def BuildCombinedData (chi_list, ratio, N_density):
-    # ==================== Check for valid ratio 
-    ratio_array = np.asarray(ratio, dtype = float)
-    print(np.isclose(np.sum(ratio_array), 1.0))
-    if not (np.isclose(np.sum(ratio_array), 1.0)):
-        raise ValueError("The sum of all atomic fractions is not close to 1.0")
+def BuildCombinedChiTechData (chi_list, N_density):
     
     data = {}
     
@@ -27,7 +22,7 @@ def BuildCombinedData (chi_list, ratio, N_density):
         neutron_gs = []
         gamma_gs = []
         for line in cf:
-            #Get the group structure
+            # Get the group structure
             if line.find('GROUPS') != -1:
                 line_list  = line.split(' ')
                 if i == 0:
@@ -37,7 +32,7 @@ def BuildCombinedData (chi_list, ratio, N_density):
                         err_msg = "The group_structure is not the same in " + str(chi_list[i]) + line_list[1] + str(num_group)
                         raise ValueError(err_msg)
             
-            #Get the group structures
+            # Get the group structures
             elif line.find('GS_BEGIN') != -1:
                 line_list = line.split('_')
                 particle = line_list[0]
@@ -55,7 +50,7 @@ def BuildCombinedData (chi_list, ratio, N_density):
                     line_string = cf.readline()
                         
                 
-            #Get the moment
+            # Get the moment
             elif ((line.find('MOMENTS') !=  -1) and (line.find('TRANSFER') == -1)):
                 line_list = line.split(' ')
                 if i == 0:
@@ -65,7 +60,7 @@ def BuildCombinedData (chi_list, ratio, N_density):
                         err_msg = "The group moment is not the same in " + str(chi_list[i]) + line_list[1] + str(num_moment)
                         raise ValueError(err_msg)
             
-            #Get the cross_section
+            # Get the cross_section
             elif ((line.find('TRANSFER') == -1) and (line.find('BEGIN') != -1)):
                 line_list = line.split('_')
                 cs_name = line_list[0] + '_' + line_list[1]
@@ -74,8 +69,8 @@ def BuildCombinedData (chi_list, ratio, N_density):
         cf.close() 
     
     # Flip the neuton and gamma gs 
-    neutron_gs = np.flip(neutron_gs)
-    gamma_gs = np.flip(gamma_gs)
+    # neutron_gs = np.flip(neutron_gs)
+    # gamma_gs = np.flip(gamma_gs)
 
     data["G"] = num_group
     data["M"] = num_moment
@@ -86,7 +81,7 @@ def BuildCombinedData (chi_list, ratio, N_density):
     #==================================== Find all cross section labels
     union = set.union(*[set(x) for x in cs_OverallList])
    
-    #===================================  Process Cross-Sections
+    #===================================  Process Cross Sections
     cs_dict = {}
     for cs_name in union:  
         cs_value = [] 
@@ -95,10 +90,10 @@ def BuildCombinedData (chi_list, ratio, N_density):
             cf = open(chi_list[i], 'r')
             for line in cf:
                 if ((line.find(cs_name) != -1) and (line.find('BEGIN') != -1)):
-                    for j in range (0,num_group):
+                    for g in range (0,num_group):
                         value_line = cf.readline().split()
                         if value_line != []:
-                            cs_value2[j] += float(value_line[1])*ratio[i]*N_density[i]
+                            cs_value2[g] += float(value_line[1])*N_density[i]
             cf.close()
         
         cs_dict[cs_name.lower()] = cs_value2
@@ -108,16 +103,47 @@ def BuildCombinedData (chi_list, ratio, N_density):
     data.update(cs_dict)
     
     #======================================= Process Transfer Matrix
-    #Create an empty space to store the transfer_matrices
+    # Create an empty space to store the transfer_matrices
+    transfer_mats = []
+    for m in range (0, num_moment):
+        transfer_mats.append(np.zeros((num_group,num_group)))
+    
+    for i in range (len(chi_list)):
+        m = 0
+        cf = open(chi_list[i], 'r')
+        for line in cf:
+            if line.find('MOMENTS_BEGIN') != -1:
+                moment_line = cf.readline().split()
+                while (moment_line[0] != 'TRANSFER_MOMENTS_END'):
+                    moment_line = cf.readline().split()
+                    if ((moment_line[0] == '#') or (moment_line[0] == 'TRANSFER_MOMENTS_END')):
+                        m += 1
+                    else:
+                        # Replace values in transfer matrixes
+                        XS_value = float(moment_line[-1])*N_density[i]
+                        moment_index  = int(moment_line[1])
+                        group_index   = int(moment_line[2])
+                        nonzero_index = int(moment_line[3])
+                        transfer_mats[moment_index][group_index,nonzero_index] += XS_value
+        cf.close()
+    
+    data["transfer_matrices"] = transfer_mats
+    
+    return data
+
+
+"""
+    #======================================= Process Transfer Matrix
+    # Create an empty space to store the transfer_matrices
     transfer_mats = []
     for m in range (0, num_moment):
         moment_list = []
         for g in range (0, num_group):
-            null_list = np.zeros(num_group)
-            moment_list.append(null_list)
+            null_array = np.zeros(num_group)
+            moment_list.append(null_array)
         transfer_mats.append(moment_list)
     
-    #Create an empty space to store the transfer_matrices
+    # Create an empty space to store the transfer_matrices
     transfer_mats_nonzeros = []
     for m in range (0, num_moment):
         moment_list = []
@@ -152,14 +178,14 @@ def BuildCombinedData (chi_list, ratio, N_density):
                             group_moment = []
                             g += 1
                         
-                        #Replace values in transfer matrixes
-                        XS_value = float(moment_line[-1])*ratio[i]*N_density[i]
+                        # Replace values in transfer matrixes
+                        XS_value = float(moment_line[-1])*N_density[i]
                         moment_index = int(moment_line[1])
                         group_index = int(moment_line[2])
                         nonzero_index = int(moment_line[3])
                         transfer_mats[moment_index][group_index][nonzero_index] += XS_value
                         
-                        #Save the index for non_zeros values in transfer matrixes
+                        # Save the index for non_zeros values in transfer matrixes
                         transfer_mats_nonzeros[moment_index][group_index].append(nonzero_index)
                         group_moment.append(nonzero_index)
         total_moment.append(element_moment)
@@ -167,7 +193,7 @@ def BuildCombinedData (chi_list, ratio, N_density):
                                           
         cf.close()
     
-    #Eliminate duplicates in the non-zero transfer matrices
+    # Eliminate duplicates in the non-zero transfer matrices
     for m in range (0, num_moment):
         for g in range (0, num_group):
             transfer_mats_nonzeros[m][g] = list(set(transfer_mats_nonzeros[m][g]))
@@ -176,5 +202,4 @@ def BuildCombinedData (chi_list, ratio, N_density):
     data["transfer_matrices_sparsity"] = transfer_mats_nonzeros
     
     return data
-
-
+"""
