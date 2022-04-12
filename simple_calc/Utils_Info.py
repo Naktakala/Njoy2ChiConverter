@@ -121,7 +121,7 @@ def InfiniteMediumSpectrum(data, source_def, plot=False):
 
 # ===================================================
 def create_source_spectrum(group_structure,myE,fission=False):
-    #Convert to eV
+    #Convert to eV. myE must be entered in MeV
     myE *= pow(10,6)
 
     Gn = len(group_structure)
@@ -140,7 +140,7 @@ def create_source_spectrum(group_structure,myE,fission=False):
         elif ( (myE == group_structure[i][1]) and (i != 0 ) ):
             index = [i, i-1]
 
-    # if my chance, myE = existing bound, spread 0.5 to both bins
+    # if by chance, myE = existing bound, spread 0.5 to both bins
     ###
     if not fission:
         for idx in index:

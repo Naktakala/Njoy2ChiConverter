@@ -17,7 +17,7 @@ def Njoy_spectrum_plotter(outp, path):
       gamma_heating_spectrum[i] *= gamma_spectrum[i]
     #================================= Plot energy spectrum
     #================================= Flux
-    fig = plt.figure(figsize=(12,6))
+    fig = plt.figure(figsize=(12,6), )
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
     ax = fig.add_subplot(1, 2, 1)
     ax.semilogy(neutron_group_bndries, neutron_spectrum)
@@ -33,20 +33,20 @@ def Njoy_spectrum_plotter(outp, path):
     plt.savefig(path+'Neutron_spectrum.png')
 
     #================================= Heating XS
-    fig = plt.figure(figsize=(12,6))
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    ax = fig.add_subplot(1, 2, 1)
-    ax.semilogy(neutron_group_bndries, neutron_heating_spectrum,color='r')
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("H(E) (eV/s)")
-    ax.grid('on')
-    ax = fig.add_subplot(1, 2, 2)
-    ax.loglog(neutron_group_bndries, neutron_heating_spectrum, color='r')
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("H(E) (eV/s)")
-    ax.grid('on')
-    plt.suptitle('neutron heating')
-    plt.savefig(path+'Neutron_Heating_spectrum.png')
+    # fig = plt.figure(figsize=(12,6))
+    # fig.subplots_adjust(hspace=0.4, wspace=0.4)
+    # ax = fig.add_subplot(1, 2, 1)
+    # ax.semilogy(neutron_group_bndries, neutron_heating_spectrum,color='r')
+    # ax.set_xlabel("Energy (MeV)")
+    # ax.set_ylabel("H(E) (eV/s)")
+    # ax.grid('on')
+    # ax = fig.add_subplot(1, 2, 2)
+    # ax.loglog(neutron_group_bndries, neutron_heating_spectrum, color='r')
+    # ax.set_xlabel("Energy (MeV)")
+    # ax.set_ylabel("H(E) (eV/s)")
+    # ax.grid('on')
+    # plt.suptitle('neutron heating')
+    # plt.savefig(path+'Neutron_Heating_spectrum.png')
 
     #Testing
     if (gamma_spectrum != []):
