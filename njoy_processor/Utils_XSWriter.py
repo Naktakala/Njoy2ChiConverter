@@ -3,9 +3,23 @@ import numpy as np
 
 
 # ===================================================================
-def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
-    cf = open(chi_filename, 'w')
+def WriteChiTechFile(data, chi_full_path, problem_description):
+    #============================== Testing ====================
 
+    cf = open(chi_full_path, 'w')
+
+    cf.write("#=================== Problem Description =============" + "\n")
+    n_group = problem_description['G_n']
+    g_group = problem_description['G_g']
+    cf.write("# Isotope: " + problem_description['isotope'] + "\n")
+    cf.write("# Problem type: "  + problem_description['problem_type'] + "\n")
+    if n_group>0:
+        cf.write("# Neutron group structure: " + str(n_group) + " groups \n")
+    if g_group>0:
+        cf.write("# Gamma group structure: " + str(g_group) + " groups \n")
+    cf.write("\n")
+
+    #============================
     sig_t = data["sigma_t"]
     sig_a = data["sigma_a"]
     sig_s = data["sigma_s"]
@@ -19,20 +33,45 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
     decay_const = data["decay_constants"]
     gamma = data["gamma"]
     ddt_coeff = data["inv_velocity"]
+
     transfer_mats = data["transfer_matrices"]
     transfer_mats_nonzeros = data["transfer_matrices_sparsity"]
+
+    neutron_gs = data["neutron_gs"]
+    gamma_gs = data["gamma_gs"] 
 
     G = np.size(sig_t)
     M = len(transfer_mats)
     J = len(decay_const)
 
-    cf.write(comment + "\n")
+    cf.write("# Output" + "\n")
     cf.write("NUM_GROUPS " + str(G) + "\n")
     cf.write("NUM_MOMENTS " + str(M) + "\n")
     if J > 0:
         cf.write("NUM_PRECURSORS " + str(J) + "\n")
-
     cf.write("\n")
+
+    if neutron_gs != []:
+        # print(n_group, len(neutron_gs))
+        # neutron_gs = np.flip(neutron_gs)
+        cf.write("NEUTRON_GS_BEGIN" + "\n")
+        for n in range(0, n_group):
+            cf.write("{:<4d}".format(n) + " ")
+            cf.write("{:<8g}".format(neutron_gs[n][1]) + " ")
+            cf.write("{:<g}".format(neutron_gs[n][2]) + " ")
+            cf.write("\n")
+        cf.write("NEUTRON_GS_END" + "\n\n")
+
+    if gamma_gs != []:
+        # print(g_group, len(gamma_gs))
+        # gamma_gs = np.flip(gamma_gs)
+        cf.write("GAMMA_GS_BEGIN" + "\n")
+        for g in range(0, g_group):
+            cf.write("{:<4d}".format(g) + " ")
+            cf.write("{:<8g}".format(gamma_gs[g][1]) + " ")
+            cf.write("{:<g}".format(gamma_gs[g][2]) + " ")
+            cf.write("\n")
+        cf.write("GAMMA_GS_END" + "\n\n")
 
     cf.write("SIGMA_T_BEGIN" + "\n")
     for g in range(0, G):
@@ -61,14 +100,6 @@ def WriteChiTechFile(data, chi_filename = "output.cxs", comment = "# Output"):
         cf.write("{:<g}".format(sig_heat[g]))
         cf.write("\n")
     cf.write("SIGMA_HEAT_END" + "\n\n")
-    
-    #Test Start
-    Ratio_sigf = (np.linalg.norm(sig_f) / pow(10,-20))*100
-    cf.write("np.linalg.norm(sig_f) = " + str(Ratio_sigf) + "% of 1e-20")
-    cf.write("\n")
-    
-    
-    #Test End
     
     if np.linalg.norm(sig_f) > 1.0e-20:
         cf.write("SIGMA_F_BEGIN" + "\n")
